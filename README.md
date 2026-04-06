@@ -5,7 +5,9 @@
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0--only-16a34a.svg)](./LICENSE)
 [![Downloads](https://img.shields.io/github/downloads/M-Nikox/Slate/total?color=0ea5e9)](https://github.com/M-Nikox/Slate/releases)
 
-Fast, clean desktop app for renaming TV/anime media files into consistent episode formats.
+### Fast, clean desktop app for renaming TV/anime media files into consistent episode formats.
+
+Currently a proof of concept, you can download and try it out, it works for most, but doesn't parse everything yet. My goal for future versions up until I hit v1.0.0 is to be able to be 100% fully catch every type of name. For now, it will catch most of them. Slate is best for dealing with more Anime focused titles that use brackets.
 
 ---
 
