@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true, // Vite 8 handles emitting; TSC just checks types
+    "allowImportingTsExtensions": true, 
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "typeRoots": ["./node_modules/@types"],
+    "types": ["node", "electron"]
+  },
+  "include": [
+    "src/main/**/*", 
+    "src/preload/**/*", 
+    "src/shared/**/*"
+  ]
+}

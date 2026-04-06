@@ -1,0 +1,436 @@
+import React, { useState, useCallback, useEffect } from 'react';
+import { bridge } from './bridge.js';
+import { usePreviews } from './hooks/usePreviews.js';
+import PreviewTable from './components/PreviewTable.js';
+import ShowNameEditor from './components/ShowNameEditor.js';
+import UndoBar from './components/UndoBar.js';
+import DropZone from './components/DropZone.js';
+import type { ScannedFile, RenameOperation } from '../shared/types.js';
+
+type AppStatus =
+  | { type: 'idle' }
+  | { type: 'renaming' }
+  | { type: 'undoing' }
+  | { type: 'checking-updates' }
+  | { type: 'error'; message: string };
+
+export default function App() {
+  const [folderPath, setFolderPath]     = useState<string | null>(null);
+  const [files, setFiles]               = useState<ScannedFile[]>([]);
+  const [loading, setLoading]           = useState(false);
+  const [overrideName, setOverrideName] = useState('');
+  const [selected, setSelected]         = useState<Set<string>>(new Set());
+  const [undoCount, setUndoCount]       = useState(0);
+  const [status, setStatus]             = useState<AppStatus>({ type: 'idle' });
+  const [updateStatus, setUpdateStatus] = useState<string | null>(null);
+
+  const rows         = usePreviews(files, overrideName);
+  const detectedName = rows.find(r => r.parsed)?.proposedName?.split(' - ')[0] ?? '';
+
+  // Update window title whenever folder changes
+  useEffect(() => {
+    if (folderPath) {
+      const folderName = folderPath.split(/[\\/]/).pop() ?? folderPath;
+      bridge.setTitle(`Slate — ${folderName}`);
+    } else {
+      bridge.setTitle('Slate');
+    }
+  }, [folderPath]);
+
+  async function checkForUndo(folder: string) {
+    const result = await bridge.checkUndo(folder);
+    setUndoCount(result.exists ? result.count : 0);
+  }
+
+  async function loadFolder(picked: string) {
+    setFolderPath(picked);
+    setOverrideName('');
+    setSelected(new Set());
+    setStatus({ type: 'idle' });
+    setLoading(true);
+    const [scanned] = await Promise.all([
+      bridge.scanFolder(picked),
+      checkForUndo(picked),
+    ]);
+    setFiles(scanned);
+    setLoading(false);
+  }
+
+  async function handlePickFolder() {
+    const picked = await bridge.pickFolder();
+    if (!picked) return;
+    await loadFolder(picked);
+  }
+
+  const handleFolderDropped = useCallback(async (droppedPath: string) => {
+    await loadFolder(droppedPath);
+  }, []);
+
+  const handleToggle = useCallback((filePath: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(filePath) ? next.delete(filePath) : next.add(filePath);
+      return next;
+    });
+  }, []);
+
+  const handleToggleAll = useCallback((checked: boolean) => {
+    if (checked) {
+      setSelected(new Set(rows.filter(r => r.parsed).map(r => r.file.path)));
+    } else {
+      setSelected(new Set());
+    }
+  }, [rows]);
+
+  async function handleRename() {
+    if (!folderPath || selected.size === 0) return;
+
+    const operations: RenameOperation[] = rows
+      .filter(r => r.parsed && r.proposedName && selected.has(r.file.path))
+      .map(r => ({
+        from: r.file.path,
+        to: r.file.path.replace(r.file.name, r.proposedName!),
+      }));
+
+    if (operations.length === 0) return;
+    setStatus({ type: 'renaming' });
+
+    try {
+      const result = await bridge.renameFiles(folderPath, operations);
+      if (result.failed) {
+        setStatus({
+          type: 'error',
+          message: `Stopped at "${result.failed.op.from.split(/[\\/]/).pop()}": ${result.failed.error}. ${result.succeeded.length} file(s) renamed and can be undone.`,
+        });
+      } else {
+        setStatus({ type: 'idle' });
+      }
+      const scanned = await bridge.scanFolder(folderPath);
+      setFiles(scanned);
+      setSelected(new Set());
+      await checkForUndo(folderPath);
+    } catch (err) {
+      setStatus({ type: 'error', message: err instanceof Error ? err.message : String(err) });
+    }
+  }
+
+  async function handleUndo() {
+    if (!folderPath) return;
+    setStatus({ type: 'undoing' });
+    try {
+      await bridge.executeUndo(folderPath);
+      setUndoCount(0);
+      setStatus({ type: 'idle' });
+      const scanned = await bridge.scanFolder(folderPath);
+      setFiles(scanned);
+      setSelected(new Set());
+    } catch (err) {
+      setStatus({ type: 'error', message: err instanceof Error ? err.message : String(err) });
+    }
+  }
+
+  async function handleCheckForUpdates() {
+    setStatus({ type: 'checking-updates' });
+    setUpdateStatus('Checking for updates…');
+    try {
+      const result = await bridge.checkForUpdates();
+      setUpdateStatus(result.message);
+      if (result.status === 'error') {
+        setStatus({ type: 'error', message: result.message });
+      } else {
+        setStatus({ type: 'idle' });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setUpdateStatus(`Unable to check for updates: ${message}`);
+      setStatus({ type: 'error', message: `Unable to check for updates: ${message}` });
+    }
+  }
+
+  const isRenaming    = status.type === 'renaming';
+  const isUndoing     = status.type === 'undoing';
+  const isCheckingUpdates = status.type === 'checking-updates';
+  const isBusy        = isRenaming || isUndoing || isCheckingUpdates;
+  const selectedCount = selected.size;
+  const parsedCount   = rows.filter(r => r.parsed).length;
+
+  return (
+    <DropZone onFolderDropped={handleFolderDropped} disabled={isBusy}>
+      {/* Header */}
+      <div style={styles.header}>
+        <div style={styles.headerLeft}>
+          <span style={styles.title}>Slate</span>
+          {folderPath && (
+            <span style={styles.folderChip}>
+              {folderPath.split(/[\\/]/).pop()}
+            </span>
+          )}
+        </div>
+        <button
+          className="btn-hover"
+          style={styles.button}
+          onClick={handlePickFolder}
+          disabled={isBusy}
+        >
+          Browse Folder
+        </button>
+        <button
+          className="btn-hover"
+          style={styles.button}
+          onClick={handleCheckForUpdates}
+          disabled={isBusy}
+        >
+          {isCheckingUpdates ? 'Checking…' : 'Check for Updates'}
+        </button>
+      </div>
+
+      {updateStatus && (
+        <div style={styles.updateBar}>
+          <span>{updateStatus}</span>
+        </div>
+      )}
+
+      {/* Undo bar */}
+      {undoCount > 0 && folderPath && (
+        <UndoBar count={undoCount} onUndo={handleUndo} undoing={isUndoing} />
+      )}
+
+      {/* Error bar */}
+      {status.type === 'error' && (
+        <div style={styles.errorBar}>
+          <span>⚠ {status.message}</span>
+          <button
+            className="btn-error-dismiss-hover"
+            style={styles.errorDismiss}
+            onClick={() => setStatus({ type: 'idle' })}
+          >✕</button>
+        </div>
+      )}
+
+      {/* Show name editor */}
+      {files.length > 0 && !loading && (
+        <ShowNameEditor
+          value={overrideName}
+          onChange={setOverrideName}
+          detectedName={detectedName}
+        />
+      )}
+
+      {/* Body */}
+      {loading && (
+        <div style={styles.centeredHint}>
+          <span style={styles.hintIcon}>⏳</span>
+          <span style={styles.hintText}>Scanning folder…</span>
+        </div>
+      )}
+
+      {isRenaming && (
+        <div style={styles.centeredHint}>
+          <span style={styles.hintIcon}>✏️</span>
+          <span style={styles.hintText}>Renaming files…</span>
+        </div>
+      )}
+
+      {!loading && !isRenaming && files.length === 0 && (
+        <div style={styles.emptyState}>
+          <div style={styles.emptyTitle}>Drop a folder here</div>
+          <div style={styles.emptySubtitle}>or use Browse Folder to get started</div>
+        </div>
+      )}
+
+      {!loading && !isRenaming && files.length > 0 && rows.length === 0 && (
+        <div style={styles.centeredHint}>
+          <span style={styles.hintText}>No media files found in this folder.</span>
+        </div>
+      )}
+
+      {!loading && !isRenaming && rows.length > 0 && (
+        <PreviewTable
+          rows={rows}
+          selected={selected}
+          onToggle={handleToggle}
+          onToggleAll={handleToggleAll}
+        />
+      )}
+
+      {/* Footer */}
+      {!loading && !isRenaming && rows.length > 0 && (
+        <div style={styles.footer}>
+          <span style={styles.footerMeta}>
+            {parsedCount} file{parsedCount !== 1 ? 's' : ''} recognised
+            {rows.length !== parsedCount ? ` · ${rows.length - parsedCount} skipped` : ''}
+          </span>
+          <button
+            className="btn-primary-hover"
+            style={{
+              ...styles.renameButton,
+              opacity: selectedCount === 0 || isBusy ? 0.4 : 1,
+            }}
+            onClick={handleRename}
+            disabled={selectedCount === 0 || isBusy}
+          >
+            {isRenaming
+              ? 'Renaming…'
+              : selectedCount > 0
+                ? `Rename ${selectedCount} file${selectedCount !== 1 ? 's' : ''}`
+                : 'Select files to rename'
+            }
+          </button>
+        </div>
+      )}
+    </DropZone>
+  );
+}
+
+const styles: Record<string, React.CSSProperties> = {
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '0 20px',
+    height: '52px',
+    borderBottom: '1px solid #1a1a1a',
+    flexShrink: 0,
+  },
+  headerLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  logo: {
+    fontSize: '18px',
+    lineHeight: 1,
+  },
+  title: {
+    fontSize: '15px',
+    fontWeight: 700,
+    letterSpacing: '-0.3px',
+    color: '#fff',
+  },
+  folderChip: {
+    fontSize: '12px',
+    color: '#444',
+    background: '#181818',
+    border: '1px solid #242424',
+    borderRadius: '4px',
+    padding: '2px 8px',
+    maxWidth: '320px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  button: {
+    background: '#1e1e1e',
+    color: '#ccc',
+    border: '1px solid #2e2e2e',
+    borderRadius: '6px',
+    padding: '7px 14px',
+    fontSize: '13px',
+    transition: 'background 0.15s, border-color 0.15s',
+  },
+  errorBar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '9px 20px',
+    background: '#1e1212',
+    borderBottom: '1px solid #3a2020',
+    fontSize: '13px',
+    color: '#d07070',
+    flexShrink: 0,
+  },
+  updateBar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '9px 20px',
+    background: '#121820',
+    borderBottom: '1px solid #202a3a',
+    fontSize: '13px',
+    color: '#8fb3ff',
+    flexShrink: 0,
+  },
+  errorDismiss: {
+    background: 'none',
+    border: 'none',
+    color: '#d07070',
+    fontSize: '13px',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    transition: 'color 0.15s',
+  },
+  emptyState: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '12px',
+    color: '#333',
+  },
+  emptyIcon: {
+    fontSize: '48px',
+    marginBottom: '4px',
+    filter: 'grayscale(1) opacity(0.3)',
+  },
+  emptyTitle: {
+    fontSize: '16px',
+    fontWeight: 600,
+    color: '#3a3a3a',
+  },
+  emptySubtitle: {
+    fontSize: '13px',
+    color: '#2e2e2e',
+  },
+  centeredHint: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
+  },
+  hintIcon: {
+    fontSize: '24px',
+  },
+  hintText: {
+    fontSize: '13px',
+    color: '#444',
+  },
+  footer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '11px 20px',
+    borderTop: '1px solid #1a1a1a',
+    flexShrink: 0,
+  },
+  footerMeta: {
+    fontSize: '12px',
+    color: '#3a3a3a',
+  },
+  renameButton: {
+    background: '#1a3320',
+    color: '#4a9e5c',
+    border: '1px solid #253d2a',
+    borderRadius: '6px',
+    padding: '7px 18px',
+    fontSize: '13px',
+    fontWeight: 500,
+    transition: 'background 0.15s, border-color 0.15s',
+  },
+
+  logoImg: {
+  width: '22px',
+  height: '22px',
+  objectFit: 'contain' as const,
+  },
+
+  emptyStateImg: {
+  width: '56px',
+  height: '56px',
+  objectFit: 'contain' as const,
+  opacity: 0.15,
+  marginBottom: '4px',
+  },
+};

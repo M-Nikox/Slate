@@ -1,0 +1,249 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Test and build (Linux)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build app
+        run: npm run build
+
+  package-pr-linux:
+    name: Package Linux artifacts (PR lightweight)
+    runs-on: ubuntu-latest
+    needs: checks
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free disk space early
+        run: |
+          rm -rf "$GITHUB_WORKSPACE/out" "$GITHUB_WORKSPACE/dist"
+          rm -rf "$HOME/.cache/electron" "$HOME/.cache/electron-builder"
+          npm cache clean --force || true
+          df -h
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Package app
+        run: npm run make
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: slate-linux-pr-artifacts
+          path: |
+            dist/*.AppImage
+            dist/*.zip
+            dist/latest*.yml
+          if-no-files-found: warn
+          retention-days: 14
+
+  package-linux:
+    name: Package Linux artifacts
+    runs-on: ubuntu-latest
+    needs: checks
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free disk space early
+        run: |
+          rm -rf "$GITHUB_WORKSPACE/out" "$GITHUB_WORKSPACE/dist"
+          rm -rf "$HOME/.cache/electron" "$HOME/.cache/electron-builder"
+          npm cache clean --force || true
+          df -h
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Package app
+        run: npm run make
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: slate-linux-artifacts
+          path: |
+            dist/*.AppImage
+            dist/*.zip
+            dist/latest*.yml
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Publish release assets on tags
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            dist/*.AppImage
+            dist/*.zip
+            dist/latest*.yml
+          generate_release_notes: true
+
+  package-macos:
+    name: Package macOS artifacts
+    runs-on: macos-latest
+    needs: checks
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free disk space early
+        run: |
+          rm -rf "$GITHUB_WORKSPACE/out" "$GITHUB_WORKSPACE/dist"
+          rm -rf "$HOME/.cache/electron" "$HOME/.cache/electron-builder"
+          npm cache clean --force || true
+          df -h
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Package app
+        run: npm run make
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: slate-macos-artifacts
+          path: |
+            dist/*.dmg
+            dist/*.zip
+            dist/latest*.yml
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Publish release assets on tags
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            dist/*.dmg
+            dist/*.zip
+            dist/latest*.yml
+          generate_release_notes: true
+
+  package-windows:
+    name: Package Windows artifacts
+    runs-on: windows-latest
+    needs: checks
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free disk space early
+        shell: pwsh
+        run: |
+          Remove-Item -Path "$env:GITHUB_WORKSPACE\out","$env:GITHUB_WORKSPACE\dist" -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path "$env:USERPROFILE\AppData\Local\electron\Cache","$env:LOCALAPPDATA\electron-builder\Cache" -Recurse -Force -ErrorAction SilentlyContinue
+          npm cache clean --force
+          Get-PSDrive -PSProvider FileSystem
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Enable optional signing on trusted refs
+        shell: bash
+        run: |
+          if [[ -n "${{ secrets.CSC_LINK }}" && -n "${{ secrets.CSC_KEY_PASSWORD }}" ]]; then
+            echo "::add-mask::${{ secrets.CSC_LINK }}"
+            echo "::add-mask::${{ secrets.CSC_KEY_PASSWORD }}"
+            echo "CSC_LINK=${{ secrets.CSC_LINK }}" >> "$GITHUB_ENV"
+            echo "CSC_KEY_PASSWORD=${{ secrets.CSC_KEY_PASSWORD }}" >> "$GITHUB_ENV"
+            echo "Signing secrets detected; signing enabled."
+          else
+            echo "Signing secrets not configured; proceeding unsigned."
+          fi
+
+      - name: Package app
+        run: npm run make
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: slate-windows-artifacts
+          path: |
+            dist/*.exe
+            dist/*.zip
+            dist/latest*.yml
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Publish release assets on tags
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            dist/*.exe
+            dist/*.zip
+            dist/latest*.yml
+          generate_release_notes: true

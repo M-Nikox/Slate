@@ -1,0 +1,20 @@
+appId: com.mnikox.slate
+productName: Slate
+directories:
+  output: dist
+  buildResources: build
+files:
+  - out/**
+  - package.json
+linux:
+  target:
+    - AppImage
+    - zip
+mac:
+  target:
+    - dmg
+    - zip
+win:
+  target:
+    - nsis
+    - zip
