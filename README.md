@@ -3,7 +3,7 @@
 [![Build](https://img.shields.io/github/actions/workflow/status/M-Nikox/Slate/ci.yml?branch=master&label=build)](https://github.com/M-Nikox/Slate/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-0.1.0-7c3aed)](https://github.com/M-Nikox/Slate/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0--only-16a34a.svg)](./LICENSE)
-[![Downloads](https://img.shields.io/github/downloads/M-Nikox/Slate/total?color=0ea5e9)](https://github.com/M-Nikox/Slate/releases)
+[![Downloads](https://img.shields.io/badge/downloads-releases-0ea5e9)](https://github.com/M-Nikox/Slate/releases)
 
 ### Fast, clean desktop app for renaming TV/anime media files into consistent episode formats.
 
