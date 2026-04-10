@@ -18,12 +18,19 @@ function TableRow({
   onToggle: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
+  const isLowConfidence = row.parsed && row.confidence === 'low';
+
+  const rowBackground = () => {
+    if (!row.parsed) return 'transparent';
+    if (isLowConfidence) return hovered ? '#1f1a0e' : '#181408';
+    return hovered ? '#161616' : 'transparent';
+  };
 
   return (
     <tr
       style={{
         borderBottom: '1px solid #141414',
-        background: hovered ? '#161616' : 'transparent',
+        background: rowBackground(),
         opacity: row.parsed ? 1 : 0.35,
         transition: 'background 0.1s',
       }}
@@ -45,10 +52,23 @@ function TableRow({
       </td>
       <td style={{ ...styles.td, ...styles.arrow }}>→</td>
       <td style={{ ...styles.td, ...styles.proposedName }}>
-        {row.parsed
-          ? <span title={row.proposedName ?? ''}>{row.proposedName}</span>
-          : <span style={styles.unparsed}>Could not parse</span>
-        }
+        {row.parsed ? (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span
+              style={{ ...styles.proposedNameText, color: isLowConfidence ? '#c8a84b' : '#b8dbbe' }}
+              title={row.proposedName ?? ''}
+            >
+              {row.proposedName}
+            </span>
+            {isLowConfidence && (
+              <span style={styles.lowConfidenceBadge} title="Low confidence — verify before renaming">
+                ⚠ low confidence
+              </span>
+            )}
+          </span>
+        ) : (
+          <span style={styles.unparsed}>Could not parse</span>
+        )}
       </td>
     </tr>
   );
@@ -160,9 +180,24 @@ const styles: Record<string, React.CSSProperties> = {
     width: '28px',
   },
   proposedName: {
-    color: '#b8dbbe',
     fontFamily: 'monospace',
     fontSize: '12px',
+    overflow: 'hidden',
+  },
+  proposedNameText: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  lowConfidenceBadge: {
+    fontSize: '10px',
+    color: '#8a6a1a',
+    background: '#2a2008',
+    border: '1px solid #3d3010',
+    borderRadius: '3px',
+    padding: '1px 5px',
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
   },
   unparsed: {
     color: '#333',
