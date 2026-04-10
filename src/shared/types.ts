@@ -1,9 +1,18 @@
+export type Confidence = 'high' | 'low';
+
 export interface ParseResult {
   showName: string;
   season: number;
   episode: number;
   episodeEnd?: number;
   extension: string;
+  confidence: Confidence;
+}
+
+export interface ManualModeConfig {
+  showName: string;
+  season: number;
+  startEpisode: number;
 }
 
 export interface ScannedFile {
