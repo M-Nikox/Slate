@@ -48,17 +48,17 @@ describe('parseFilename — standard S01E01 format', () => {
   });
 
   it('strips HDR tags', () => {
-    const r = parseFilename('The.Bear.S01E01.HDR10.mkv');
+    const r = parseFilename('The.Bear.HDR10.S01E01.mkv');
     expect(r!.showName).toBe('The Bear');
   });
 
   it('strips Dolby Vision tag', () => {
-    const r = parseFilename('Succession.S04E01.DV.WEB-DL.mkv');
+    const r = parseFilename('Succession.DV.S04E01.mkv');
     expect(r!.showName).toBe('Succession');
   });
 
   it('strips curly brace tags', () => {
-    const r = parseFilename('Dark.S01E01{HQ}.mkv');
+    const r = parseFilename('Dark{HQ}.S01E01.mkv');
     expect(r!.showName).toBe('Dark');
   });
 
@@ -129,6 +129,20 @@ describe('parseFilename — alternate formats', () => {
     expect(r!.showName).toBe('Samurai Champloo');
     expect(r!.season).toBe(1);
     expect(r!.episode).toBe(19);
+  });
+
+  it('parses EP X uppercase (defaults to season 1)', () => {
+    const r = parseFilename('Samurai Champloo EP 19.mkv');
+    expect(r!.showName).toBe('Samurai Champloo');
+    expect(r!.season).toBe(1);
+    expect(r!.episode).toBe(19);
+  });
+
+  it('parses EPISODE X uppercase (defaults to season 1)', () => {
+    const r = parseFilename('Cowboy Bebop EPISODE 06.mkv');
+    expect(r!.showName).toBe('Cowboy Bebop');
+    expect(r!.season).toBe(1);
+    expect(r!.episode).toBe(6);
   });
 });
 
@@ -216,5 +230,39 @@ describe('parseFilename — anime bracket format', () => {
     const r = parseFilename('[Group] My Show - 03v2 [720p].mkv');
     expect(r!.episode).toBe(3);
     expect(r!.showName).toBe('My Show');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// confidence
+// ---------------------------------------------------------------------------
+
+describe('parseFilename — confidence', () => {
+  it('S01E01 is high confidence', () => {
+    expect(parseFilename('Breaking.Bad.S03E07.mkv')!.confidence).toBe('high');
+  });
+
+  it('S01E01E02 double episode is high confidence', () => {
+    expect(parseFilename('Arcane.S01E01E02.mkv')!.confidence).toBe('high');
+  });
+
+  it('1x01 is high confidence', () => {
+    expect(parseFilename('Firefly.1x01.mkv')!.confidence).toBe('high');
+  });
+
+  it('Season X Episode Y is high confidence', () => {
+    expect(parseFilename('Fargo Season 2 Episode 5.mkv')!.confidence).toBe('high');
+  });
+
+  it('Episode X is high confidence', () => {
+    expect(parseFilename('Cowboy Bebop Episode 06.mkv')!.confidence).toBe('high');
+  });
+
+  it('anime dash style is low confidence', () => {
+    expect(parseFilename('[SubsPlease] Frieren - 28 [1080p].mkv')!.confidence).toBe('low');
+  });
+
+  it('anime dash style without group tag is low confidence', () => {
+    expect(parseFilename('My Show - 07.mkv')!.confidence).toBe('low');
   });
 });
