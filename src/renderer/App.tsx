@@ -179,6 +179,16 @@ export default function App() {
         >
           Browse Folder
         </button>
+        {folderPath && (
+          <button
+            className="btn-hover"
+            style={styles.button}
+            onClick={() => loadFolder(folderPath)}
+            disabled={isBusy}
+          >
+            Refresh
+          </button>
+        )}
         <button
           className="btn-hover"
           style={styles.button}
