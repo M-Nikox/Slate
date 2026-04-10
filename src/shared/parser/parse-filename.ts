@@ -21,6 +21,8 @@ const EPISODE_PATTERNS: EpisodePattern[] = [
   { regex: /(\d{1,2})x(\d{2})/i, hasSeasonGroup: true },
   // Season 1 Episode 1 — verbose
   { regex: /[Ss]eason\s*(\d{1,2})\s*[Ee]pisode\s*(\d{1,2})/i, hasSeasonGroup: true },
+  // "Episode 7" / "Ep 7" — no season, defaults to 1
+  { regex: /\b[Ee]p(?:isode)?\s*(\d{1,3})\b/, hasSeasonGroup: false, defaultSeason: 1 },
   // Anime style: "Show Name - 07" — no season, defaults to 1
   // Matches " - 07" or " - 007", optionally followed by "v2", at a word boundary
   { regex: /[-–]\s*(\d{2,3})(?:v\d+)?(?=\s*(?:\[|\(|$))/, hasSeasonGroup: false, defaultSeason: 1 },
@@ -75,10 +77,10 @@ export function parseFilename(filename: string): ParseResult | null {
       episode = parseInt(match[2], 10);
       episodeEnd = match[3] !== undefined ? parseInt(match[3], 10) : undefined;
 
-      // Reject malformed multi-episode matches (e.g. S01E01E03).
-      // Only consecutive doubles are considered valid.
+      // Non-consecutive multi-episode (e.g. S01E01E03) — don't treat as a range.
+      // Fall through to the S01E01 pattern below, which will parse just the first episode.
       if (episodeEnd !== undefined && episodeEnd !== episode + 1) {
-        return null;
+        continue;
       }
     } else {
       // Anime style — no season group, episode is capture group 1
