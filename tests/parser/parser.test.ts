@@ -47,6 +47,21 @@ describe('parseFilename — standard S01E01 format', () => {
     expect(r!.showName).toBe('Chernobyl');
   });
 
+  it('strips HDR tags', () => {
+    const r = parseFilename('The.Bear.S01E01.HDR10.mkv');
+    expect(r!.showName).toBe('The Bear');
+  });
+
+  it('strips Dolby Vision tag', () => {
+    const r = parseFilename('Succession.S04E01.DV.WEB-DL.mkv');
+    expect(r!.showName).toBe('Succession');
+  });
+
+  it('strips curly brace tags', () => {
+    const r = parseFilename('Dark.S01E01{HQ}.mkv');
+    expect(r!.showName).toBe('Dark');
+  });
+
   it('handles underscores as separators', () => {
     const r = parseFilename('dark_S02E06_720p.mkv');
     expect(r!.showName).toBe('Dark');
@@ -72,8 +87,12 @@ describe('parseFilename — double episode format', () => {
     expect(r!.episodeEnd).toBe(29);
   });
 
-  it('returns null for non-consecutive double episode pattern', () => {
-    expect(parseFilename('Arcane.S01E01E03.mkv')).toBeNull();
+  it('falls back to first episode for non-consecutive double episode pattern', () => {
+    const r = parseFilename('Arcane.S01E01E03.mkv');
+    expect(r).not.toBeNull();
+    expect(r!.season).toBe(1);
+    expect(r!.episode).toBe(1);
+    expect(r!.episodeEnd).toBeUndefined();
   });
 });
 
@@ -96,6 +115,20 @@ describe('parseFilename — alternate formats', () => {
     expect(r!.showName).toBe('Fargo');
     expect(r!.season).toBe(2);
     expect(r!.episode).toBe(5);
+  });
+
+  it('parses Episode X without season (defaults to season 1)', () => {
+    const r = parseFilename('Cowboy Bebop Episode 06.mkv');
+    expect(r!.showName).toBe('Cowboy Bebop');
+    expect(r!.season).toBe(1);
+    expect(r!.episode).toBe(6);
+  });
+
+  it('parses Ep X shorthand (defaults to season 1)', () => {
+    const r = parseFilename('Samurai Champloo Ep 19.mkv');
+    expect(r!.showName).toBe('Samurai Champloo');
+    expect(r!.season).toBe(1);
+    expect(r!.episode).toBe(19);
   });
 });
 
