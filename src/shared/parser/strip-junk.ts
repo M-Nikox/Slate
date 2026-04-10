@@ -2,11 +2,12 @@
 // Order matters — brackets first, then specific tags, then separators.
 
 const JUNK_PATTERNS: RegExp[] = [
-  // Release groups and bracketed tags: [YIFY], [SubsPlease], (GROUP), etc.
+  // Release groups and bracketed tags: [YIFY], [SubsPlease], (GROUP), {tag}, etc.
   /[\[(][^\]/)]+[\])]/g,
+  /\{[^}]+\}/g,
 
-  // Quality
-  /\b(2160p|1080p|720p|480p|4K|UHD|SD)\b/gi,
+  // Quality / dynamic range
+  /\b(2160p|1080p|720p|480p|4K|8K|UHD|SD|HDR10\+?|HDR|DV|DoVi|SDR)\b/gi,
 
   // Codecs
   /\b(x264|x265|h264|h265|HEVC|AVC|xvid|divx|av1)\b/gi,
