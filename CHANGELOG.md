@@ -4,6 +4,32 @@ All notable changes to this project are documented in this file.
 
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses semantic versioning tags for releases.
 
+## [0.2.1] - 2026-04-10
+
+### Added
+- Parser: confidence tags (`high` | `low`) on every `ParseResult`. All structured patterns (SxxExx, 1x01, verbose, Ep X) are `high`. The anime dash pattern (`- 07`) is `low`.
+- UI: low-confidence rows render with a yellow tint and a `⚠ low confidence` badge on the proposed name. High-confidence rows are visually unchanged.
+- Manual mode: a checkbox toggle in the toolbar activates manual mode. When on, the user provides a show name, season number, and starting episode — Slate assigns episode numbers sequentially based on file sort order. The auto-parser and show name editor are hidden while manual mode is active.
+- UI: Refresh button in the header — re-scans the current folder without having to use Browse Folder again. Only visible when a folder is already loaded.
+
+### Fixed
+- Parser: `Ep`/`Episode` pattern now has the `/i` flag — `EP 7` and `EPISODE 7` are correctly matched.
+- Strip-junk: `HDR10+` is now stripped correctly. It was previously inside a `\b...\b` group where the trailing `+` prevented the word boundary from matching.
+- Tests: HDR, Dolby Vision, and curly brace test inputs were repositioned so the tags fall in the show name slice (before the episode marker), meaning the tests now actually exercise the stripping patterns they claim to cover.
+- CI: release notes were being duplicated (three copies) because all three platform jobs called `softprops/action-gh-release` with `generate_release_notes: true` on the same tag. Fixed by introducing a dedicated `create-release` job that runs once; platform jobs now only upload assets.
+- CI: auto-generated release notes (which pulled in dependabot as a contributor) replaced with a Python script that extracts the relevant section from `CHANGELOG.md` for the current tag. A missing changelog entry will now fail the workflow loudly rather than publishing an empty release.
+- Build: artifact filenames are now consistent and descriptive across all platforms (e.g. `slate-0.2.1-linux-x64.AppImage`, `slate-0.2.1-mac-arm64.dmg`, `slate-0.2.1-windows-x64-setup.exe`). The Windows installer name was previously broken due to NSIS ignoring the top-level `artifactName`.
+
+### Changed
+- `ParseResult` type now includes a required `confidence: Confidence` field.
+- `PreviewRow` now includes `confidence: Confidence | null`.
+- `usePreviews` accepts two new arguments: `manualMode: boolean` and `manualConfig: ManualModeConfig | null`.
+
+### Tests
+- Added 7 confidence tests covering all pattern types.
+- Added 2 uppercase `EP X` / `EPISODE X` tests.
+- Parser test count: 44 → 53.
+
 ## [0.2.0] - 2026-04-08
 
 ### Added
