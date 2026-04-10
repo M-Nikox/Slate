@@ -5,7 +5,8 @@ import PreviewTable from './components/PreviewTable.js';
 import ShowNameEditor from './components/ShowNameEditor.js';
 import UndoBar from './components/UndoBar.js';
 import DropZone from './components/DropZone.js';
-import type { ScannedFile, RenameOperation } from '../shared/types.js';
+import ManualModePanel from './components/ManualModePanel.js';
+import type { ManualModeConfig, ScannedFile, RenameOperation } from '../shared/types.js';
 
 type AppStatus =
   | { type: 'idle' }
@@ -23,8 +24,10 @@ export default function App() {
   const [undoCount, setUndoCount]       = useState(0);
   const [status, setStatus]             = useState<AppStatus>({ type: 'idle' });
   const [updateStatus, setUpdateStatus] = useState<string | null>(null);
+  const [manualMode, setManualMode]     = useState(false);
+  const [manualConfig, setManualConfig] = useState<ManualModeConfig | null>(null);
 
-  const rows         = usePreviews(files, overrideName);
+  const rows         = usePreviews(files, overrideName, manualMode, manualConfig);
   const detectedName = rows.find(r => r.parsed)?.proposedName?.split(' - ')[0] ?? '';
 
   // Update window title whenever folder changes
@@ -47,6 +50,8 @@ export default function App() {
     setOverrideName('');
     setSelected(new Set());
     setStatus({ type: 'idle' });
+    setManualMode(false);
+    setManualConfig(null);
     setLoading(true);
     const [scanned] = await Promise.all([
       bridge.scanFolder(picked),
@@ -207,13 +212,36 @@ export default function App() {
         </div>
       )}
 
-      {/* Show name editor */}
-      {files.length > 0 && !loading && (
+      {/* Show name editor — hidden in manual mode */}
+      {files.length > 0 && !loading && !manualMode && (
         <ShowNameEditor
           value={overrideName}
           onChange={setOverrideName}
           detectedName={detectedName}
         />
+      )}
+
+      {/* Manual mode toggle + panel */}
+      {files.length > 0 && !loading && (
+        <div style={styles.manualModeBar}>
+          <label style={styles.manualModeToggle}>
+            <input
+              type="checkbox"
+              checked={manualMode}
+              onChange={e => {
+                setManualMode(e.target.checked);
+                setSelected(new Set());
+                if (!e.target.checked) setManualConfig(null);
+              }}
+              style={{ accentColor: '#4a9e5c', marginRight: '7px' }}
+            />
+            Manual mode
+          </label>
+        </div>
+      )}
+
+      {files.length > 0 && !loading && manualMode && (
+        <ManualModePanel config={manualConfig} onChange={setManualConfig} />
       )}
 
       {/* Body */}
@@ -432,5 +460,22 @@ const styles: Record<string, React.CSSProperties> = {
   objectFit: 'contain' as const,
   opacity: 0.15,
   marginBottom: '4px',
+  },
+
+  manualModeBar: {
+    display: 'flex',
+    alignItems: 'center',
+    padding: '7px 20px',
+    borderBottom: '1px solid #1a1a1a',
+    flexShrink: 0,
+    background: '#0f0f0f',
+  },
+  manualModeToggle: {
+    display: 'flex',
+    alignItems: 'center',
+    fontSize: '12.5px',
+    color: '#666',
+    cursor: 'pointer',
+    userSelect: 'none' as const,
   },
 };
