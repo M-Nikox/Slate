@@ -1,5 +1,5 @@
 import { stripJunk } from './strip-junk.js';
-import type { ParseResult } from '../types.js';
+import type { Confidence, ParseResult } from '../types.js';
 
 const LOWERCASE_WORDS = new Set([
   'a', 'an', 'the', 'and', 'but', 'or', 'nor', 'for', 'so', 'yet',
@@ -10,22 +10,23 @@ interface EpisodePattern {
   regex: RegExp;
   hasSeasonGroup: boolean;   // false = no season captured, defaultSeason is used
   defaultSeason?: number;
+  confidence: Confidence;
 }
 
 const EPISODE_PATTERNS: EpisodePattern[] = [
   // S01E01E02 — double episode
-  { regex: /[Ss](\d{1,2})[Ee](\d{2})[Ee](\d{2})/, hasSeasonGroup: true },
+  { regex: /[Ss](\d{1,2})[Ee](\d{2})[Ee](\d{2})/, hasSeasonGroup: true, confidence: 'high' },
   // S01E01 — standard
-  { regex: /[Ss](\d{1,2})[Ee](\d{2})/, hasSeasonGroup: true },
+  { regex: /[Ss](\d{1,2})[Ee](\d{2})/, hasSeasonGroup: true, confidence: 'high' },
   // 1x01 — alternate
-  { regex: /(\d{1,2})x(\d{2})/i, hasSeasonGroup: true },
+  { regex: /(\d{1,2})x(\d{2})/i, hasSeasonGroup: true, confidence: 'high' },
   // Season 1 Episode 1 — verbose
-  { regex: /[Ss]eason\s*(\d{1,2})\s*[Ee]pisode\s*(\d{1,2})/i, hasSeasonGroup: true },
+  { regex: /[Ss]eason\s*(\d{1,2})\s*[Ee]pisode\s*(\d{1,2})/i, hasSeasonGroup: true, confidence: 'high' },
   // "Episode 7" / "Ep 7" — no season, defaults to 1
-  { regex: /\b[Ee]p(?:isode)?\s*(\d{1,3})\b/, hasSeasonGroup: false, defaultSeason: 1 },
+  { regex: /\b[Ee]p(?:isode)?\s*(\d{1,3})\b/i, hasSeasonGroup: false, defaultSeason: 1, confidence: 'high' },
   // Anime style: "Show Name - 07" — no season, defaults to 1
   // Matches " - 07" or " - 007", optionally followed by "v2", at a word boundary
-  { regex: /[-–]\s*(\d{2,3})(?:v\d+)?(?=\s*(?:\[|\(|$))/, hasSeasonGroup: false, defaultSeason: 1 },
+  { regex: /[-–]\s*(\d{2,3})(?:v\d+)?(?=\s*(?:\[|\(|$))/, hasSeasonGroup: false, defaultSeason: 1, confidence: 'low' },
 ];
 
 function getExtension(filename: string): string {
@@ -89,7 +90,7 @@ export function parseFilename(filename: string): ParseResult | null {
       episodeEnd = undefined;
     }
 
-    return { showName, season, episode, episodeEnd, extension: ext };
+    return { showName, season, episode, episodeEnd, extension: ext, confidence: pattern.confidence };
   }
 
   return null;
