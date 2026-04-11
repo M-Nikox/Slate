@@ -1,13 +1,5 @@
 import type { ParseResult } from '../types.js';
-
-function padSeason(n: number): string {
-  return String(n).padStart(2, '0');
-}
-
-function padEpisode(n: number): string {
-  // Use 3-digit padding for episodes above 99 (e.g. One Piece ep 1000)
-  return String(n).padStart(n > 99 ? 3 : 2, '0');
-}
+import { padSeason, padEpisode } from './pad.js';
 
 export function buildName(result: ParseResult, overrideName?: string): string {
   const show = overrideName?.trim() || result.showName;
