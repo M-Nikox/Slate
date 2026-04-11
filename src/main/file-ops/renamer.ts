@@ -3,25 +3,25 @@ import path from 'path';
 import type { RenameOperation, RenameResult, UndoEntry, UndoLog } from '../../shared/types.js';
 import { writeUndoLog, readUndoLog, deleteUndoLog } from '../undo/undo-log.js';
 
-// Validates a single rename operation before execution:
-// - both paths must be absolute
-// - both paths must be inside the same folder
-// - source file must exist
-// - destination must not already exist (no silent overwrites)
+function isSubPath(parent: string, child: string): boolean {
+  const rel = path.relative(parent, child);
+  return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
+}
+
 function validateOperation(op: RenameOperation, folderPath: string): string | null {
   const resolvedFolder = path.resolve(folderPath);
-  const resolvedFrom   = path.resolve(op.from);
-  const resolvedTo     = path.resolve(op.to);
+  const resolvedFrom = path.resolve(op.from);
+  const resolvedTo = path.resolve(op.to);
 
   if (!path.isAbsolute(resolvedFrom) || !path.isAbsolute(resolvedTo)) {
     return 'Paths must be absolute';
   }
 
-  const sep = path.sep;
-  if (!resolvedFrom.startsWith(resolvedFolder + sep)) {
+  if (!isSubPath(resolvedFolder, resolvedFrom)) {
     return `Source is outside the target folder: ${resolvedFrom}`;
   }
-  if (!resolvedTo.startsWith(resolvedFolder + sep)) {
+
+  if (!isSubPath(resolvedFolder, resolvedTo)) {
     return `Destination is outside the target folder: ${resolvedTo}`;
   }
 
@@ -33,16 +33,12 @@ function validateOperation(op: RenameOperation, folderPath: string): string | nu
     return `Destination already exists: ${resolvedTo}`;
   }
 
-  return null; // valid
+  return null;
 }
 
-export function executeRename(
-  folderPath: string,
-  operations: RenameOperation[]
-): RenameResult {
+export function executeRename(folderPath: string, operations: RenameOperation[]): RenameResult {
   const resolvedFolder = path.resolve(folderPath);
 
-  // --- Step 1: Validate ALL operations before touching anything ---
   for (const op of operations) {
     const error = validateOperation(op, resolvedFolder);
     if (error) {
@@ -50,11 +46,9 @@ export function executeRename(
     }
   }
 
-  // --- Step 2: Write undo log BEFORE renaming anything ---
-  // If this throws, we stop here and nothing is renamed.
   const undoEntries: UndoEntry[] = operations.map(op => ({
     original: path.resolve(op.from),
-    renamed:  path.resolve(op.to),
+    renamed: path.resolve(op.to),
   }));
 
   const log: UndoLog = {
@@ -64,21 +58,22 @@ export function executeRename(
     operations: undoEntries,
   };
 
-  writeUndoLog(log); // throws on failure
+  writeUndoLog(log);
 
-  // --- Step 3: Rename files one by one ---
   const succeeded: RenameOperation[] = [];
 
   for (const op of operations) {
+    const from = path.resolve(op.from);
+    const to = path.resolve(op.to);
+
     try {
-      fs.renameSync(path.resolve(op.from), path.resolve(op.to));
-      succeeded.push(op);
+      fs.renameSync(from, to);
+      succeeded.push({ from, to });
     } catch (err) {
-      // Stop on first failure. Already-renamed files are in the undo log.
       const message = err instanceof Error ? err.message : String(err);
       return {
         succeeded,
-        failed: { op, error: message },
+        failed: { op: { from, to }, error: message },
       };
     }
   }
@@ -88,32 +83,24 @@ export function executeRename(
 
 export function executeUndo(folderPath: string): number {
   const resolvedFolder = path.resolve(folderPath);
-  const log = readUndoLog(resolvedFolder); // throws if missing or malformed
+  const log = readUndoLog(resolvedFolder);
 
   let count = 0;
 
-  // Reverse the operations in reverse order
   for (const entry of [...log.operations].reverse()) {
-    const from = path.resolve(entry.renamed);   // current name
-    const to   = path.resolve(entry.original);  // original name
+    const from = path.resolve(entry.renamed);
+    const to = path.resolve(entry.original);
 
-    // Safety: both must be inside the folder
-    const sep = path.sep;
-    if (
-      !from.startsWith(resolvedFolder + sep) ||
-      !to.startsWith(resolvedFolder + sep)
-    ) {
+    if (!isSubPath(resolvedFolder, from) || !isSubPath(resolvedFolder, to)) {
       console.warn(`[undo] Skipping entry outside folder: ${from}`);
       continue;
     }
 
-    // Only undo if the renamed file exists
     if (!fs.existsSync(from)) {
       console.warn(`[undo] Renamed file not found, skipping: ${from}`);
       continue;
     }
 
-    // Don't overwrite an existing file
     if (fs.existsSync(to) && from !== to) {
       console.warn(`[undo] Original path already occupied, skipping: ${to}`);
       continue;
@@ -123,7 +110,6 @@ export function executeUndo(folderPath: string): number {
     count++;
   }
 
-  // Clean up the log only after all undos complete
   deleteUndoLog(resolvedFolder);
   return count;
 }
