@@ -1,8 +1,10 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { autoUpdater } from 'electron-updater';
+import electronUpdater from 'electron-updater';
+const { autoUpdater } = electronUpdater;
 import { registerHandlers } from './ipc/handlers.js';
+import { IPC } from '../shared/ipc-channels.js';
 
 const moduleFilename = fileURLToPath(import.meta.url);
 const moduleDirname = path.dirname(moduleFilename);
@@ -42,10 +44,14 @@ function createWindow(): void {
 app.whenReady().then(() => {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = false;
+
   registerHandlers();
 
-  ipcMain.on('set-title', (_event, title: string) => {
-    mainWindow?.setTitle(title);
+  ipcMain.removeAllListeners(IPC.SET_TITLE);
+  ipcMain.on(IPC.SET_TITLE, (_event, title: string) => {
+    if (typeof title === 'string') {
+      mainWindow?.setTitle(title);
+    }
   });
 
   createWindow();
