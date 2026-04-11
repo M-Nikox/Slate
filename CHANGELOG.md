@@ -4,12 +4,6 @@ All notable changes to this project are documented in this file.
 
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses semantic versioning tags for releases.
 
-# Changelog
-
-All notable changes to this project are documented in this file.
-
-The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses semantic versioning tags for releases.
-
 ## [0.4.0] - 2026-04-11
 
 ### Added
@@ -18,7 +12,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0
 - UI: footer now shows edited row count — e.g. `12 recognised · 3 edited · 2 skipped`.
 - UI: "Select low confidence" button in the footer — appears when low-confidence rows exist in auto mode, selects all of them for review in one click.
 - Build/dev: added explicit `typecheck` script for renderer/shared and main/preload TypeScript projects.
-- Build/dev: added Node engine constraint (`>=20 <23`) to reduce environment mismatch across local/CI builds.
+- Build/dev: added Node engine constraint (`>=20.19.0`) to reduce environment mismatch across local/CI builds.
 
 ### Changed
 - Drag-and-drop overlay behavior hardened: app-level folder drop overlay now only activates for external file drags, and no longer appears during internal table row reordering in manual mode.
@@ -30,7 +24,6 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0
 - Preload bridge hardened with lightweight runtime guards for `setTitle` and `getPathForFile` inputs.
 - Build config cleanup and hardening:
   - TypeScript config cleaned for strict JSON compatibility.
-  - Added `baseUrl` for path mapping clarity.
   - Electron Vite config explicitly externalizes update/versioning runtime deps used in main process.
   - Electron Builder config explicitly sets `asar`, `extraMetadata.main`, and includes README/LICENSE in packaged artifacts.
 
