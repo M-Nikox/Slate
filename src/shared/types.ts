@@ -15,6 +15,11 @@ export interface ManualModeConfig {
   startEpisode: number;
 }
 
+export interface RowOverride {
+  showName: string;
+  episode: number;
+}
+
 export interface ScannedFile {
   name: string;
   path: string;
