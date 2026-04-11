@@ -7,7 +7,8 @@ const JUNK_PATTERNS: RegExp[] = [
   /\{[^}]+\}/g,
 
   // Quality / dynamic range
-  /\b(2160p|1080p|720p|480p|4K|8K|UHD|SD|HDR10\+?|HDR|DV|DoVi|SDR)\b/gi,
+  /\bHDR10\+/gi,
+  /\b(2160p|1080p|720p|480p|4K|8K|UHD|SD|HDR10|HDR|DV|DoVi|SDR)\b/gi,
 
   // Codecs
   /\b(x264|x265|h264|h265|HEVC|AVC|xvid|divx|av1)\b/gi,
