@@ -239,9 +239,18 @@ export default function App() {
               type="checkbox"
               checked={manualMode}
               onChange={e => {
-                setManualMode(e.target.checked);
+                const enabled = e.target.checked;
+                setManualMode(enabled);
                 setSelected(new Set());
-                if (!e.target.checked) setManualConfig(null);
+                if (!enabled) {
+                  setManualConfig(null);
+                } else {
+                  setManualConfig(prev => prev ?? {
+                    showName: overrideName.trim() || detectedName || '',
+                    season: 1,
+                    startEpisode: 1,
+                  });
+                }
               }}
               style={{ accentColor: '#4a9e5c', marginRight: '7px' }}
             />
