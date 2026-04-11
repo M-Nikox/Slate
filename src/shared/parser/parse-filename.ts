@@ -24,8 +24,8 @@ const EPISODE_PATTERNS: EpisodePattern[] = [
   { regex: /[Ss]eason\s*(\d{1,2})\s*[Ee]pisode\s*(\d{1,3})(?!\d)/i, hasSeasonGroup: true, confidence: 'high' },
   // "Episode 7" / "Ep 7" — no season, defaults to 1
   { regex: /\b[Ee]p(?:isode)?\s*(\d{1,3})\b/i, hasSeasonGroup: false, defaultSeason: 1, confidence: 'high' },
-  // Anime style: "Show Name - 07" — no season, defaults to 1
-  // Matches " - 07" or " - 007", optionally followed by "v2", at a word boundary
+  // Anime style: "Show Name - 07", "Show Name – 07", or "Show Name — 07" — no season, defaults to 1
+  // Matches a hyphen/en dash/em dash before a 2–3 digit episode number, optionally followed by "v2"
   { regex: /[-–—]\s*(\d{2,3})(?:v\d+)?(?=\s*(?:\[|\(|$))/, hasSeasonGroup: false, defaultSeason: 1, confidence: 'low' },
   // NNN compact format: first digit = season, last two = episode (e.g. 307 → S03E07)
   // Allows dot/underscore separators, blocks alphanumeric suffixes (e.g. 1080p)
