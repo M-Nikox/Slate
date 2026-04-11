@@ -19,6 +19,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0
 - CI: release notes were being duplicated (three copies) because all three platform jobs called `softprops/action-gh-release` with `generate_release_notes: true` on the same tag. Fixed by introducing a dedicated `create-release` job that runs once; platform jobs now only upload assets.
 - CI: auto-generated release notes (which pulled in dependabot as a contributor) replaced with a Python script that extracts the relevant section from `CHANGELOG.md` for the current tag. A missing changelog entry will now fail the workflow loudly rather than publishing an empty release.
 - Build: artifact filenames are now consistent and descriptive across all platforms (e.g. `slate-0.2.1-linux-x64.AppImage`, `slate-0.2.1-mac-arm64.dmg`, `slate-0.2.1-windows-x64-setup.exe`). The Windows installer name was previously broken due to NSIS ignoring the top-level `artifactName`.
+- Manual mode: when enabled with a blank show name, rows now return unparsed (no proposed name, rename button disabled) instead of silently falling back to the auto-parser. Manual mode is now authoritative — the parser never runs while it is active.
+- Manual mode: enabling the toggle now seeds `manualConfig` with sensible defaults (`season: 1`, `startEpisode: 1`) and pre-fills the show name from the current override name or detected name if available, so the input isn't blank on first open.
 
 ### Changed
 - `ParseResult` type now includes a required `confidence: Confidence` field.
