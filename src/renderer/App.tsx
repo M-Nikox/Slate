@@ -313,6 +313,7 @@ export default function App() {
           onToggleAll={handleToggleAll}
           onSetOverride={handleSetOverride}
           onClearOverride={handleClearOverride}
+          manualMode={manualMode}
         />
       )}
 
