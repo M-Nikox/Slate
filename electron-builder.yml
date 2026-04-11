@@ -1,5 +1,6 @@
 appId: com.mnikox.slate
 productName: Slate
+artifactName: slate-${version}-${os}-${arch}.${ext}
 directories:
   output: dist
   buildResources: build
@@ -8,13 +9,21 @@ files:
   - package.json
 linux:
   target:
-    - AppImage
-    - zip
+    - target: AppImage
+      arch: [x64]
+    - target: zip
+      arch: [x64]
 mac:
   target:
-    - dmg
-    - zip
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
 win:
   target:
-    - nsis
-    - zip
+    - target: nsis
+      arch: [x64]
+    - target: zip
+      arch: [x64]
+nsis:
+  artifactName: slate-${version}-windows-x64-setup.exe
