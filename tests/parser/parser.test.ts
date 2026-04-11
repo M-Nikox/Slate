@@ -265,4 +265,79 @@ describe('parseFilename — confidence', () => {
   it('anime dash style without group tag is low confidence', () => {
     expect(parseFilename('My Show - 07.mkv')!.confidence).toBe('low');
   });
+
+  it('NNN compact format is low confidence', () => {
+    expect(parseFilename('One Piece 307.mkv')!.confidence).toBe('low');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// long episode numbers
+// ---------------------------------------------------------------------------
+
+describe('parseFilename — long episode numbers', () => {
+  it('parses S01E001 three-digit episode', () => {
+    const r = parseFilename('One.Piece.S01E198.mkv');
+    expect(r!.season).toBe(1);
+    expect(r!.episode).toBe(198);
+    expect(r!.confidence).toBe('high');
+  });
+
+  it('parses 1x198 three-digit episode', () => {
+    const r = parseFilename('One.Piece.1x198.mkv');
+    expect(r!.season).toBe(1);
+    expect(r!.episode).toBe(198);
+  });
+
+  it('parses verbose Season 20 Episode 198', () => {
+    const r = parseFilename('One Piece Season 20 Episode 198.mkv');
+    expect(r!.season).toBe(20);
+    expect(r!.episode).toBe(198);
+  });
+
+  it('parses double episode S01E197E198', () => {
+    const r = parseFilename('One.Piece.S01E197E198.mkv');
+    expect(r!.episode).toBe(197);
+    expect(r!.episodeEnd).toBe(198);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// NNN compact format
+// ---------------------------------------------------------------------------
+
+describe('parseFilename — NNN compact format', () => {
+  it('parses 307 as S03E07', () => {
+    const r = parseFilename('One Piece 307.mkv');
+    expect(r!.season).toBe(3);
+    expect(r!.episode).toBe(7);
+    expect(r!.confidence).toBe('low');
+  });
+
+  it('parses 114 as S01E14', () => {
+    const r = parseFilename('Breaking Bad 114.mkv');
+    expect(r!.season).toBe(1);
+    expect(r!.episode).toBe(14);
+  });
+
+  it('does not match when surrounded by other digits', () => {
+    // 1080 should not be parsed as S10E80 — surrounded by nothing but still 4 digits
+    expect(parseFilename('Show.1080p.mkv')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildName — episode padding
+// ---------------------------------------------------------------------------
+
+describe('buildName — episode padding', () => {
+  it('pads 2-digit episodes with leading zero', () => {
+    const r = parseFilename('One.Piece.S01E07.mkv')!;
+    expect(buildName(r)).toBe('One Piece - S01E07.mkv');
+  });
+
+  it('uses 3-digit padding for episodes above 99', () => {
+    const r = parseFilename('One.Piece.S01E198.mkv')!;
+    expect(buildName(r)).toBe('One Piece - S01E198.mkv');
+  });
 });
