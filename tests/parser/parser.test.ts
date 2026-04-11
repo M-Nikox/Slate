@@ -324,6 +324,10 @@ describe('parseFilename — NNN compact format', () => {
     // 1080 should not be parsed as S10E80 — surrounded by nothing but still 4 digits
     expect(parseFilename('Show.1080p.mkv')).toBeNull();
   });
+
+  it('does not parse NNN as episode when part of resolution tag', () => {
+    expect(parseFilename('Show.S01E1080p.mkv')).toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------
