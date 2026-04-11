@@ -17,13 +17,17 @@ export function usePreviews(
   manualConfig: ManualModeConfig | null,
 ): PreviewRow[] {
   return useMemo(() => {
-    if (manualMode && manualConfig && manualConfig.showName.trim()) {
+    if (manualMode) {
+      const showName = manualConfig?.showName.trim();
+      if (!manualConfig || !showName) {
+        return files.map(file => ({ file, proposedName: null, parsed: false, confidence: null }));
+      }
       return files.map((file, index) => {
         const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
         const ep = String(manualConfig.startEpisode + index).padStart(2, '0');
         const season = String(manualConfig.season).padStart(2, '0');
-        const proposedName = `${manualConfig.showName.trim()} - S${season}E${ep}${ext}`;
-        return { file, proposedName, parsed: true, confidence: 'high' };
+        const proposedName = `${showName} - S${season}E${ep}${ext}`;
+        return { file, proposedName, parsed: true, confidence: 'high' as const };
       });
     }
 
