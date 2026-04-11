@@ -9,6 +9,7 @@ interface Props {
   onToggleAll: (checked: boolean) => void;
   onSetOverride: (filePath: string, override: RowOverride) => void;
   onClearOverride: (filePath: string) => void;
+  manualMode: boolean;
 }
 
 function TableRow({
@@ -17,31 +18,33 @@ function TableRow({
   onToggle,
   onSetOverride,
   onClearOverride,
+  manualMode,
 }: {
   row: PreviewRow;
   isSelected: boolean;
   onToggle: () => void;
   onSetOverride: (override: RowOverride) => void;
   onClearOverride: () => void;
+  manualMode: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editShow, setEditShow] = useState('');
   const [editEp, setEditEp] = useState('');
   const showRef = useRef<HTMLInputElement>(null);
+  const editRowRef = useRef<HTMLSpanElement>(null);
 
   const isLowConfidence = row.parsed && row.confidence === 'low';
+  const editable = !manualMode && row.parsed;
 
   function openEditor() {
-    if (!row.parsed || !row.proposedName) return;
-    const match = row.proposedName.match(/^(.+?) - S\d+E(\d+)/);
-    if (match) {
-      setEditShow(match[1]);
-      setEditEp(String(parseInt(match[2], 10)));
-    } else {
-      setEditShow('');
-      setEditEp('');
-    }
+    if (!editable || !row.parsedResult) return;
+    // Prefill from parsedResult directly — not from re-parsing the formatted string
+    const override = row.overridden && row.parsedResult
+      ? { showName: row.parsedResult.showName, episode: row.parsedResult.episode }
+      : null;
+    setEditShow(override?.showName ?? row.parsedResult.showName);
+    setEditEp(String(override?.episode ?? row.parsedResult.episode));
     setEditing(true);
   }
 
@@ -55,6 +58,12 @@ function TableRow({
       onSetOverride({ showName: editShow.trim(), episode: ep });
     }
     setEditing(false);
+  }
+
+  // Only commit when focus leaves the entire edit row, not between fields
+  function handleEditRowBlur(e: React.FocusEvent) {
+    if (editRowRef.current && editRowRef.current.contains(e.relatedTarget as Node)) return;
+    commitEdit();
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -98,14 +107,13 @@ function TableRow({
         {!row.parsed ? (
           <span style={styles.unparsed}>Could not parse</span>
         ) : editing ? (
-          <span style={styles.editRow}>
+          <span ref={editRowRef} style={styles.editRow} onBlur={handleEditRowBlur}>
             <input
               ref={showRef}
               style={styles.editInput}
               value={editShow}
               onChange={e => setEditShow(e.target.value)}
               onKeyDown={handleKeyDown}
-              onBlur={commitEdit}
               placeholder="Show name"
               spellCheck={false}
             />
@@ -115,7 +123,6 @@ function TableRow({
               value={editEp}
               onChange={e => setEditEp(e.target.value)}
               onKeyDown={handleKeyDown}
-              onBlur={commitEdit}
               placeholder="Ep"
               type="number"
               min={1}
@@ -128,13 +135,11 @@ function TableRow({
           </span>
         ) : (
           <span
-            style={styles.proposedClickable}
-            title="Click to edit"
-            onClick={openEditor}
+            style={{ ...styles.proposedClickable, cursor: editable ? 'text' : 'default' }}
+            title={editable ? 'Click to edit' : undefined}
+            onClick={editable ? openEditor : undefined}
           >
-            <span
-              style={{ color: isLowConfidence ? '#c8a84b' : row.overridden ? '#8fb3ff' : '#b8dbbe' }}
-            >
+            <span style={{ color: isLowConfidence ? '#c8a84b' : row.overridden ? '#8fb3ff' : '#b8dbbe' }}>
               {row.proposedName}
             </span>
             {isLowConfidence && (
@@ -148,7 +153,7 @@ function TableRow({
                 ✎ edited ×
               </span>
             )}
-            {!isLowConfidence && !row.overridden && hovered && (
+            {editable && !isLowConfidence && !row.overridden && hovered && (
               <span style={styles.editHint}>✎</span>
             )}
           </span>
@@ -159,7 +164,7 @@ function TableRow({
 }
 
 export default function PreviewTable({
-  rows, selected, onToggle, onToggleAll, onSetOverride, onClearOverride,
+  rows, selected, onToggle, onToggleAll, onSetOverride, onClearOverride, manualMode,
 }: Props) {
   const parsedRows   = rows.filter(r => r.parsed);
   const allSelected  = parsedRows.length > 0 && parsedRows.every(r => selected.has(r.file.path));
@@ -201,6 +206,7 @@ export default function PreviewTable({
               onToggle={() => onToggle(row.file.path)}
               onSetOverride={override => onSetOverride(row.file.path, override)}
               onClearOverride={() => onClearOverride(row.file.path)}
+              manualMode={manualMode}
             />
           ))}
         </tbody>
@@ -213,18 +219,10 @@ const styles: Record<string, React.CSSProperties> = {
   wrapper: { flex: 1, overflowY: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', tableLayout: 'fixed' },
   th: {
-    padding: '8px 12px',
-    textAlign: 'left',
-    fontSize: '10.5px',
-    fontWeight: 600,
-    color: '#444',
-    textTransform: 'uppercase',
-    letterSpacing: '0.06em',
-    borderBottom: '1px solid #1a1a1a',
-    background: '#0f0f0f',
-    position: 'sticky',
-    top: 0,
-    zIndex: 1,
+    padding: '8px 12px', textAlign: 'left', fontSize: '10.5px', fontWeight: 600,
+    color: '#444', textTransform: 'uppercase', letterSpacing: '0.06em',
+    borderBottom: '1px solid #1a1a1a', background: '#0f0f0f',
+    position: 'sticky', top: 0, zIndex: 1,
   },
   tdCheck: { padding: '7px 12px', verticalAlign: 'middle', width: '36px' },
   td: { padding: '7px 12px', verticalAlign: 'middle', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
@@ -234,7 +232,7 @@ const styles: Record<string, React.CSSProperties> = {
   arrow: { color: '#2a2a2a', fontSize: '12px', textAlign: 'center', padding: '7px 0', width: '28px' },
   proposedClickable: {
     display: 'flex', alignItems: 'center', gap: '6px',
-    cursor: 'text', fontFamily: 'monospace', fontSize: '12px', overflow: 'hidden',
+    fontFamily: 'monospace', fontSize: '12px', overflow: 'hidden',
   },
   lowConfidenceBadge: {
     fontSize: '10px', color: '#8a6a1a', background: '#2a2008',
@@ -247,7 +245,7 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'nowrap', flexShrink: 0, cursor: 'pointer',
   },
   editHint: { fontSize: '11px', color: '#333', flexShrink: 0 },
-  editRow: { display: 'flex', alignItems: 'center', gap: '5px', width: '100%' },
+  editRow: { display: 'flex', alignItems: 'center', gap: '5px', width: '100%', outline: 'none' },
   editInput: {
     background: '#1a1a1a', border: '1px solid #3a3a3a', borderRadius: '4px',
     color: '#ccc', fontSize: '12px', padding: '2px 6px', outline: 'none',
