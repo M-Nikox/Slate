@@ -8,8 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0
 
 ### Added
 - Parser: long episode number support — all patterns now accept up to 3-digit episodes (`S01E198`, `1x198`, `Season 1 Episode 198`). Covers long-running shows like One Piece.
-- Parser: NNN compact format — bare 3-digit numbers like `307` are parsed as S03E07 at `low` confidence. First digit is season, last two are episode. Tightly bounded to avoid false matches.
-- UI: inline row editing — clicking the proposed name on any parsed row opens an inline editor with two fields: show name and episode number, pre-filled from the parser result. Enter or click away to save, Escape to cancel, `×` to revert to the original parser result. Works on all rows regardless of confidence.
+ - Parser: NNN compact format — bare 3-digit numbers like `307` are parsed as S03E07 at `low` confidence. First digit is season, last two are episode. Marked low-confidence because this compact form can be ambiguous.
+ - UI: inline row editing — clicking the proposed name on any parsed row opens an inline editor with two fields: show name and episode number, pre-filled from the currently displayed values. Enter or click away to save, Escape to cancel, `×` to revert to the original parser result. Works on all rows regardless of confidence.
 - UI: edited rows render in blue with an `✎ edited ×` badge. Clicking `×` on the badge clears the override without entering edit mode.
 - UI: pencil hint (`✎`) appears on hover for high-confidence rows to indicate editability.
 - Platform: Intel Mac (x64) support — macOS builds now produce both `arm64` and `x64` artifacts.
