@@ -1,6 +1,6 @@
 {
   "name": "slate",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A free, open-source media file renamer for TV shows and anime.",
   "type": "module",
   "main": "out/main/index.js",
@@ -9,6 +9,7 @@
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "preview": "electron-vite preview",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.main.json --noEmit",
     "package": "npm run build && electron-builder --publish never --config electron-builder.yml",
     "make": "npm run package",
     "test": "vitest run --config vitest.config.ts"
@@ -16,10 +17,14 @@
   "keywords": [],
   "author": "",
   "license": "GPL-3.0-only",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "devDependencies": {
     "@types/node": "^25.5.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@types/semver": "^7.7.1",
     "@vitejs/plugin-react": "^6.0.1",
     "electron": "^41.1.1",
     "electron-builder": "^26.0.12",
@@ -31,6 +36,7 @@
   "dependencies": {
     "electron-updater": "^6.8.3",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "semver": "^7.7.4"
   }
 }
