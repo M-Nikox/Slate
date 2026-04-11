@@ -1,29 +1,49 @@
 appId: com.mnikox.slate
 productName: Slate
 artifactName: slate-${version}-${os}-${arch}.${ext}
+
+asar: true
+
 directories:
   output: dist
   buildResources: build
+
 files:
   - out/**
   - package.json
+  - README*
+  - LICENSE*
+
+extraMetadata:
+  main: out/main/index.js
+
 linux:
   target:
     - target: AppImage
       arch: [x64]
     - target: zip
       arch: [x64]
+
 mac:
   target:
     - target: dmg
       arch: [arm64, x64]
     - target: zip
       arch: [arm64, x64]
+
 win:
   target:
     - target: nsis
       arch: [x64]
     - target: zip
       arch: [x64]
+
 nsis:
-  artifactName: slate-${version}-windows-x64-setup.exe
+  artifactName: slate-${version}-win-${arch}-setup.${ext}
+
+# auto-updates, not ready yet, need to test first:
+# publish:
+#   provider: github
+#   owner: M-Nikox
+#   repo: slate
+#   releaseType: release
