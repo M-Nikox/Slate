@@ -15,18 +15,18 @@ interface EpisodePattern {
 
 const EPISODE_PATTERNS: EpisodePattern[] = [
   // S01E001E002 — double episode, long format
-  { regex: /[Ss](\d{1,2})[Ee](\d{1,3})[Ee](\d{1,3})/, hasSeasonGroup: true, confidence: 'high' },
+  { regex: /[Ss](\d{1,2})[Ee](\d{1,3})(?!\d)[Ee](\d{1,3})(?!\d)/, hasSeasonGroup: true, confidence: 'high' },
   // S01E001 — standard, long format
-  { regex: /[Ss](\d{1,2})[Ee](\d{1,3})/, hasSeasonGroup: true, confidence: 'high' },
+  { regex: /[Ss](\d{1,2})[Ee](\d{1,3})(?!\d)/, hasSeasonGroup: true, confidence: 'high' },
   // 1x001 — alternate, long format
-  { regex: /(\d{1,2})x(\d{1,3})/i, hasSeasonGroup: true, confidence: 'high' },
+  { regex: /(\d{1,2})x(\d{1,3})(?!\d)/i, hasSeasonGroup: true, confidence: 'high' },
   // Season 1 Episode 1 — verbose
-  { regex: /[Ss]eason\s*(\d{1,2})\s*[Ee]pisode\s*(\d{1,3})/i, hasSeasonGroup: true, confidence: 'high' },
+  { regex: /[Ss]eason\s*(\d{1,2})\s*[Ee]pisode\s*(\d{1,3})(?!\d)/i, hasSeasonGroup: true, confidence: 'high' },
   // "Episode 7" / "Ep 7" — no season, defaults to 1
   { regex: /\b[Ee]p(?:isode)?\s*(\d{1,3})\b/i, hasSeasonGroup: false, defaultSeason: 1, confidence: 'high' },
   // Anime style: "Show Name - 07" — no season, defaults to 1
   // Matches " - 07" or " - 007", optionally followed by "v2", at a word boundary
-  { regex: /[-–]\s*(\d{2,3})(?:v\d+)?(?=\s*(?:\[|\(|$))/, hasSeasonGroup: false, defaultSeason: 1, confidence: 'low' },
+  { regex: /[-–—]\s*(\d{2,3})(?:v\d+)?(?=\s*(?:\[|\(|$))/, hasSeasonGroup: false, defaultSeason: 1, confidence: 'low' },
   // NNN compact format: first digit = season, last two = episode (e.g. 307 → S03E07)
   // Only matches exactly 3 digits, bounded, with a plausible season (1-9) and episode (01-99)
   { regex: /(?<![.\d])([1-9])(\d{2})(?![.\d])/, hasSeasonGroup: true, confidence: 'low' },
