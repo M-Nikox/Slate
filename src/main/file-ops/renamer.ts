@@ -25,10 +25,28 @@ function validateOperation(op: RenameOperation, folderPath: string): string | nu
     return `Destination is outside the target folder: ${resolvedTo}`;
   }
 
+  // 1. Existence check (redundant with lstatSync below, but kept for early exit)
   if (!fs.existsSync(resolvedFrom)) {
     return `Source file does not exist: ${resolvedFrom}`;
   }
 
+  // 2. Strict file-type validation using lstat to avoid symlink traversal
+  let stats;
+  try {
+    stats = fs.lstatSync(resolvedFrom);
+  } catch (err) {
+    return `Cannot stat source: ${resolvedFrom}`;
+  }
+
+  if (stats.isSymbolicLink()) {
+    return `Source is a symbolic link, which is not allowed: ${resolvedFrom}`;
+  }
+
+  if (!stats.isFile()) {
+    return `Source is not a regular file: ${resolvedFrom}`;
+  }
+
+  // 3. Destination conflict check (unchanged)
   if (fs.existsSync(resolvedTo) && resolvedFrom !== resolvedTo) {
     return `Destination already exists: ${resolvedTo}`;
   }
