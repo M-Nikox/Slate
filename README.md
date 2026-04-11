@@ -77,4 +77,4 @@ Then open a folder, review previews, and rename selected files.
 - [FAQ](./docs/FAQ.md)
 - [Changelog](./CHANGELOG.md)
 
-> Note: GitHub Copilot was used for CodeQL checks, pull request review assistance, and minor comment suggestions.
+> Note: GitHub Copilot was used to assist with configuring and interpreting CodeQL results, as well as for pull request review assistance and minor comment suggestions.
