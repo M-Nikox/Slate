@@ -6,14 +6,25 @@ export default defineConfig({
   main: {
     build: {
       outDir: 'out/main',
+      emptyOutDir: true,
       rollupOptions: {
-        external: ['electron', 'electron/main', 'path', 'fs', 'os', 'url'],
+        external: [
+          'electron',
+          'electron/main',
+          'path',
+          'fs',
+          'os',
+          'url',
+          'semver',
+          'electron-updater'
+        ],
       },
     },
   },
   preload: {
     build: {
       outDir: 'out/preload',
+      emptyOutDir: true,
       rollupOptions: {
         input: {
           index: path.resolve(__dirname, 'src/preload/preload.ts'),
@@ -32,10 +43,11 @@ export default defineConfig({
     base: './',
     plugins: [react()],
     build: {
+      outDir: path.resolve(__dirname, 'out/renderer'),
+      emptyOutDir: true,
       rollupOptions: {
         input: path.resolve(__dirname, 'src/renderer/index.html'),
       },
-      outDir: path.resolve(__dirname, 'out/renderer'),
     },
   },
 });
