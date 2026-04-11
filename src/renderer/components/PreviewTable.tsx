@@ -35,16 +35,13 @@ function TableRow({
   const editRowRef = useRef<HTMLSpanElement>(null);
 
   const isLowConfidence = row.parsed && row.confidence === 'low';
-  const editable = !manualMode && row.parsed;
+  const editable = !manualMode && row.parsed && row.effectiveShowName !== null;
 
   function openEditor() {
-    if (!editable || !row.parsedResult) return;
-    // Prefill from parsedResult directly — not from re-parsing the formatted string
-    const override = row.overridden && row.parsedResult
-      ? { showName: row.parsedResult.showName, episode: row.parsedResult.episode }
-      : null;
-    setEditShow(override?.showName ?? row.parsedResult.showName);
-    setEditEp(String(override?.episode ?? row.parsedResult.episode));
+    if (!editable) return;
+    // Prefill from effective values — what's actually displayed, not raw parser output
+    setEditShow(row.effectiveShowName ?? '');
+    setEditEp(String(row.effectiveEpisode ?? ''));
     setEditing(true);
   }
 
@@ -60,7 +57,7 @@ function TableRow({
     setEditing(false);
   }
 
-  // Only commit when focus leaves the entire edit row, not between fields
+  // Only commit when focus leaves the entire edit row wrapper
   function handleEditRowBlur(e: React.FocusEvent) {
     if (editRowRef.current && editRowRef.current.contains(e.relatedTarget as Node)) return;
     commitEdit();
@@ -69,6 +66,14 @@ function TableRow({
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter') commitEdit();
     if (e.key === 'Escape') setEditing(false);
+  }
+
+  // Keyboard activation for the click-to-edit span
+  function handleProposedKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openEditor();
+    }
   }
 
   const rowBackground = () => {
@@ -135,9 +140,12 @@ function TableRow({
           </span>
         ) : (
           <span
+            role={editable ? 'button' : undefined}
+            tabIndex={editable ? 0 : undefined}
+            aria-label={editable ? `Edit proposed name: ${row.proposedName}` : undefined}
             style={{ ...styles.proposedClickable, cursor: editable ? 'text' : 'default' }}
-            title={editable ? 'Click to edit' : undefined}
             onClick={editable ? openEditor : undefined}
+            onKeyDown={editable ? handleProposedKeyDown : undefined}
           >
             <span style={{ color: isLowConfidence ? '#c8a84b' : row.overridden ? '#8fb3ff' : '#b8dbbe' }}>
               {row.proposedName}
