@@ -6,7 +6,7 @@ import ShowNameEditor from './components/ShowNameEditor.js';
 import UndoBar from './components/UndoBar.js';
 import DropZone from './components/DropZone.js';
 import ManualModePanel from './components/ManualModePanel.js';
-import type { ManualModeConfig, ScannedFile, RenameOperation } from '../shared/types.js';
+import type { ManualModeConfig, RowOverride, ScannedFile, RenameOperation } from '../shared/types.js';
 
 type AppStatus =
   | { type: 'idle' }
@@ -26,8 +26,9 @@ export default function App() {
   const [updateStatus, setUpdateStatus] = useState<string | null>(null);
   const [manualMode, setManualMode]     = useState(false);
   const [manualConfig, setManualConfig] = useState<ManualModeConfig | null>(null);
+  const [rowOverrides, setRowOverrides] = useState<Map<string, RowOverride>>(new Map());
 
-  const rows         = usePreviews(files, overrideName, manualMode, manualConfig);
+  const rows         = usePreviews(files, overrideName, manualMode, manualConfig, rowOverrides);
   const detectedName = rows.find(r => r.parsed)?.proposedName?.split(' - ')[0] ?? '';
 
   // Update window title whenever folder changes
@@ -52,6 +53,7 @@ export default function App() {
     setStatus({ type: 'idle' });
     setManualMode(false);
     setManualConfig(null);
+    setRowOverrides(new Map());
     setLoading(true);
     const [scanned] = await Promise.all([
       bridge.scanFolder(picked),
@@ -86,6 +88,18 @@ export default function App() {
       setSelected(new Set());
     }
   }, [rows]);
+
+  const handleSetOverride = useCallback((filePath: string, override: RowOverride) => {
+    setRowOverrides(prev => new Map(prev).set(filePath, override));
+  }, []);
+
+  const handleClearOverride = useCallback((filePath: string) => {
+    setRowOverrides(prev => {
+      const next = new Map(prev);
+      next.delete(filePath);
+      return next;
+    });
+  }, []);
 
   async function handleRename() {
     if (!folderPath || selected.size === 0) return;
@@ -297,6 +311,8 @@ export default function App() {
           selected={selected}
           onToggle={handleToggle}
           onToggleAll={handleToggleAll}
+          onSetOverride={handleSetOverride}
+          onClearOverride={handleClearOverride}
         />
       )}
 
