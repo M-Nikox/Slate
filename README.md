@@ -1,7 +1,7 @@
 # Slate
 
 [![Build](https://img.shields.io/github/actions/workflow/status/M-Nikox/Slate/ci.yml?branch=master&label=build)](https://github.com/M-Nikox/Slate/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.1.0-7c3aed)](https://github.com/M-Nikox/Slate/releases)
+[![Version](https://img.shields.io/github/v/release/M-Nikox/Slate?color=7c3aed)](https://github.com/M-Nikox/Slate/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0--only-16a34a.svg)](./LICENSE)
 [![Downloads](https://img.shields.io/badge/downloads-releases-0ea5e9)](https://github.com/M-Nikox/Slate/releases)
 
