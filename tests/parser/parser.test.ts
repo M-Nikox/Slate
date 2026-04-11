@@ -314,6 +314,12 @@ describe('parseFilename — NNN compact format', () => {
     expect(r!.confidence).toBe('low');
   });
 
+  it('parses dot-separated NNN format', () => {
+    const r = parseFilename('One.Piece.307.mkv');
+    expect(r!.season).toBe(3);
+    expect(r!.episode).toBe(7);
+  });
+
   it('parses 114 as S01E14', () => {
     const r = parseFilename('Breaking Bad 114.mkv');
     expect(r!.season).toBe(1);
@@ -321,7 +327,6 @@ describe('parseFilename — NNN compact format', () => {
   });
 
   it('does not match when surrounded by other digits', () => {
-    // 1080 should not be parsed as S10E80 — surrounded by nothing but still 4 digits
     expect(parseFilename('Show.1080p.mkv')).toBeNull();
   });
 
