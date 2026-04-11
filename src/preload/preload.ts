@@ -30,11 +30,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   checkForUpdates: (): Promise<UpdateCheckResponse> =>
     ipcRenderer.invoke(IPC.CHECK_FOR_UPDATES),
 
-  getPathForFile: (file: File): string =>
-    webUtils.getPathForFile(file),
+  getPathForFile: (file: File): string => {
+    // Defensive guard: avoid weird renderer misuse
+    if (!(file instanceof File)) return '';
+    return webUtils.getPathForFile(file);
+  },
 
-  setTitle: (title: string): void =>
-    ipcRenderer.send('set-title', title),
+  setTitle: (title: string): void => {
+    if (typeof title !== 'string') return;
+    ipcRenderer.send(IPC.SET_TITLE, title);
+  },
 });
 
 console.log('[preload] electronAPI exposed');
