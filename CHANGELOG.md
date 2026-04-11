@@ -16,7 +16,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0
 - Docs: README version badge is now dynamic, pulling the latest release tag from GitHub automatically.
 
 ### Changed
-- `build-name.ts`: episode padding now uses 3 digits for episodes above 99 (e.g. `E198` instead of `E198` being truncated).
+- `build-name.ts`: episode padding now uses 3 digits for episodes above 99 (e.g. `E07` stays `E07`, but `E198` is correctly rendered as `E198` rather than being padded to 2 digits).
 - `usePreviews`: accepts a new `rowOverrides: Map<string, RowOverride>` argument. Per-row overrides take precedence over both the parser result and the global show name field.
 - `PreviewRow`: new `overridden: boolean` field.
 - `types.ts`: new `RowOverride` interface `{ showName: string; episode: number }`.
