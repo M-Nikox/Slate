@@ -28,8 +28,8 @@ const EPISODE_PATTERNS: EpisodePattern[] = [
   // Matches " - 07" or " - 007", optionally followed by "v2", at a word boundary
   { regex: /[-–—]\s*(\d{2,3})(?:v\d+)?(?=\s*(?:\[|\(|$))/, hasSeasonGroup: false, defaultSeason: 1, confidence: 'low' },
   // NNN compact format: first digit = season, last two = episode (e.g. 307 → S03E07)
-  // Only matches exactly 3 digits, bounded, with a plausible season (1-9) and episode (01-99)
-  { regex: /(?<![.\d])([1-9])(\d{2})(?![.\d])/, hasSeasonGroup: true, confidence: 'low' },
+  // Allows dot/underscore separators, blocks alphanumeric suffixes (e.g. 1080p)
+  { regex: /(?<!\d)([1-9])(\d{2})(?![\dA-Za-z])/, hasSeasonGroup: true, confidence: 'low' },
 ];
 
 function getExtension(filename: string): string {
