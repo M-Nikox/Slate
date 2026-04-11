@@ -276,7 +276,7 @@ describe('parseFilename — confidence', () => {
 // ---------------------------------------------------------------------------
 
 describe('parseFilename — long episode numbers', () => {
-  it('parses S01E001 three-digit episode', () => {
+  it('parses S01E198 three-digit episode', () => {
     const r = parseFilename('One.Piece.S01E198.mkv');
     expect(r!.season).toBe(1);
     expect(r!.episode).toBe(198);
