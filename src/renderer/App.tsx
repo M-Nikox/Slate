@@ -121,8 +121,11 @@ export default function App() {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      const tag = (e.target as HTMLElement).tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      const target = e.target as HTMLElement;
+      // Skip shortcuts when focus is on any interactive element, not just
+      // inputs — pressing Enter on a focused button would otherwise fire
+      // both the button click and handleRename() simultaneously.
+      if (target.closest('input, textarea, button, select, a, [contenteditable], [role="button"], [role="textbox"]')) return;
       if (isBusy || files.length === 0) return;
 
       if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
