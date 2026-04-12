@@ -31,9 +31,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke(IPC.CHECK_FOR_UPDATES),
 
   getPathForFile: (file: File): string => {
-    // Defensive guard: avoid weird renderer misuse
-    if (!(file instanceof File)) return '';
-    return webUtils.getPathForFile(file);
+    // Duck-type check instead of instanceof to avoid cross-realm failures
+    // under contextIsolation (renderer and preload live in different V8 contexts).
+    if (
+      !file ||
+      typeof file !== 'object' ||
+      typeof (file as { name?: unknown }).name !== 'string'
+    ) {
+      return '';
+    }
+    try {
+      return webUtils.getPathForFile(file);
+    } catch {
+      return '';
+    }
   },
 
   setTitle: (title: string): void => {
