@@ -30,11 +30,27 @@ contextBridge.exposeInMainWorld('electronAPI', {
   checkForUpdates: (): Promise<UpdateCheckResponse> =>
     ipcRenderer.invoke(IPC.CHECK_FOR_UPDATES),
 
-  getPathForFile: (file: File): string =>
-    webUtils.getPathForFile(file),
+  getPathForFile: (file: File): string => {
+    // Duck-type check instead of instanceof to avoid cross-realm failures
+    // under contextIsolation (renderer and preload live in different V8 contexts).
+    if (
+      !file ||
+      typeof file !== 'object' ||
+      typeof (file as { name?: unknown }).name !== 'string'
+    ) {
+      return '';
+    }
+    try {
+      return webUtils.getPathForFile(file);
+    } catch {
+      return '';
+    }
+  },
 
-  setTitle: (title: string): void =>
-    ipcRenderer.send('set-title', title),
+  setTitle: (title: string): void => {
+    if (typeof title !== 'string') return;
+    ipcRenderer.send(IPC.SET_TITLE, title);
+  },
 });
 
 console.log('[preload] electronAPI exposed');

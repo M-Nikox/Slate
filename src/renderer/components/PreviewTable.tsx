@@ -9,23 +9,36 @@ interface Props {
   onToggleAll: (checked: boolean) => void;
   onSetOverride: (filePath: string, override: RowOverride) => void;
   onClearOverride: (filePath: string) => void;
+  onReorder: (fromIndex: number, toIndex: number) => void;
   manualMode: boolean;
 }
 
 function TableRow({
   row,
+  index,
   isSelected,
   onToggle,
   onSetOverride,
   onClearOverride,
   manualMode,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+  isDragOver,
 }: {
   row: PreviewRow;
+  index: number;
   isSelected: boolean;
   onToggle: () => void;
   onSetOverride: (override: RowOverride) => void;
   onClearOverride: () => void;
   manualMode: boolean;
+  onDragStart: (e: React.DragEvent, index: number) => void;
+  onDragOver: (e: React.DragEvent, index: number) => void;
+  onDrop: (index: number) => void;
+  onDragEnd: () => void;
+  isDragOver: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -39,7 +52,6 @@ function TableRow({
 
   function openEditor() {
     if (!editable) return;
-    // Prefill from effective values — what's actually displayed, not raw parser output
     setEditShow(row.effectiveShowName ?? '');
     setEditEp(String(row.effectiveEpisode ?? ''));
     setEditing(true);
@@ -57,7 +69,6 @@ function TableRow({
     setEditing(false);
   }
 
-  // Only commit when focus leaves the entire edit row wrapper
   function handleEditRowBlur(e: React.FocusEvent) {
     if (editRowRef.current && editRowRef.current.contains(e.relatedTarget as Node)) return;
     commitEdit();
@@ -68,7 +79,6 @@ function TableRow({
     if (e.key === 'Escape') setEditing(false);
   }
 
-  // Keyboard activation for the click-to-edit span
   function handleProposedKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -77,6 +87,7 @@ function TableRow({
   }
 
   const rowBackground = () => {
+    if (isDragOver) return '#1a2a1a';
     if (!row.parsed) return 'transparent';
     if (editing) return '#141a14';
     if (isLowConfidence) return hovered ? '#1f1a0e' : '#181408';
@@ -86,20 +97,31 @@ function TableRow({
   return (
     <tr
       style={{
-        borderBottom: '1px solid #141414',
+        borderBottom: isDragOver ? '2px solid #4a9e5c' : '1px solid #141414',
         background: rowBackground(),
         opacity: row.parsed ? 1 : 0.35,
         transition: 'background 0.1s',
       }}
+      draggable={manualMode}
+      onDragStart={manualMode ? e => onDragStart(e, index) : undefined}
+      onDragOver={manualMode ? e => onDragOver(e, index) : undefined}
+      onDrop={manualMode ? () => onDrop(index) : undefined}
+      onDragEnd={manualMode ? onDragEnd : undefined}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
+      {manualMode && (
+        <td style={styles.tdDrag} title="Drag to reorder">
+          <span style={styles.dragHandle}>⠿</span>
+        </td>
+      )}
       <td style={styles.tdCheck}>
         {row.parsed && (
           <input
             type="checkbox"
             checked={isSelected}
             onChange={onToggle}
+            onKeyDown={e => { if (e.key === ' ') { e.preventDefault(); onToggle(); } }}
             style={styles.checkbox}
           />
         )}
@@ -154,10 +176,7 @@ function TableRow({
               <span style={styles.lowConfidenceBadge}>⚠ low confidence</span>
             )}
             {row.overridden && (
-              <span
-                style={styles.overriddenBadge}
-                onClick={e => { e.stopPropagation(); onClearOverride(); }}
-              >
+              <span style={styles.overriddenBadge} onClick={e => { e.stopPropagation(); onClearOverride(); }}>
                 ✎ edited ×
               </span>
             )}
@@ -172,11 +191,46 @@ function TableRow({
 }
 
 export default function PreviewTable({
-  rows, selected, onToggle, onToggleAll, onSetOverride, onClearOverride, manualMode,
+  rows, selected, onToggle, onToggleAll, onSetOverride, onClearOverride, onReorder, manualMode,
 }: Props) {
-  const parsedRows   = rows.filter(r => r.parsed);
-  const allSelected  = parsedRows.length > 0 && parsedRows.every(r => selected.has(r.file.path));
+  const [dragFromIndex, setDragFromIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const parsedRows = rows.filter(r => r.parsed);
+  const allSelected = parsedRows.length > 0 && parsedRows.every(r => selected.has(r.file.path));
   const someSelected = parsedRows.some(r => selected.has(r.file.path));
+
+  function handleDragStart(e: React.DragEvent, index: number) {
+    const target = e.target as HTMLElement;
+    const interactive = target.closest('input, button, textarea, select, [role="button"]');
+    if (interactive) {
+      e.preventDefault();
+      return;
+    }
+    // Setting effectAllowed + a payload makes the drag spec-compliant and
+    // ensures drop fires reliably across Chromium/Electron versions.
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+    setDragFromIndex(index);
+  }
+
+  function handleDragOver(e: React.DragEvent, index: number) {
+    e.preventDefault();
+    setDragOverIndex(index);
+  }
+
+  function handleDrop(toIndex: number) {
+    if (dragFromIndex !== null && dragFromIndex !== toIndex) {
+      onReorder(dragFromIndex, toIndex);
+    }
+    setDragFromIndex(null);
+    setDragOverIndex(null);
+  }
+
+  function handleDragEnd() {
+    setDragFromIndex(null);
+    setDragOverIndex(null);
+  }
 
   if (rows.length === 0) return null;
 
@@ -184,6 +238,7 @@ export default function PreviewTable({
     <div style={styles.wrapper}>
       <table style={styles.table}>
         <colgroup>
+          {manualMode && <col style={{ width: '28px' }} />}
           <col style={{ width: '36px' }} />
           <col style={{ width: '45%' }} />
           <col style={{ width: '28px' }} />
@@ -191,6 +246,7 @@ export default function PreviewTable({
         </colgroup>
         <thead>
           <tr>
+            {manualMode && <th style={styles.th} />}
             <th style={styles.th}>
               <input
                 type="checkbox"
@@ -206,15 +262,21 @@ export default function PreviewTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map(row => (
+          {rows.map((row, index) => (
             <TableRow
               key={row.file.path}
               row={row}
+              index={index}
               isSelected={selected.has(row.file.path)}
               onToggle={() => onToggle(row.file.path)}
               onSetOverride={override => onSetOverride(row.file.path, override)}
               onClearOverride={() => onClearOverride(row.file.path)}
               manualMode={manualMode}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onDragEnd={handleDragEnd}
+              isDragOver={dragOverIndex === index && dragFromIndex !== index}
             />
           ))}
         </tbody>
@@ -233,6 +295,8 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'sticky', top: 0, zIndex: 1,
   },
   tdCheck: { padding: '7px 12px', verticalAlign: 'middle', width: '36px' },
+  tdDrag: { padding: '7px 8px', verticalAlign: 'middle', width: '28px', textAlign: 'center' },
+  dragHandle: { color: '#2a2a2a', fontSize: '14px', cursor: 'grab', userSelect: 'none' },
   td: { padding: '7px 12px', verticalAlign: 'middle', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   proposedCell: { overflow: 'hidden' },
   checkbox: { accentColor: '#4a9e5c', width: '13px', height: '13px', cursor: 'pointer', display: 'block' },

@@ -6,11 +6,18 @@ interface Props {
   children: React.ReactNode;
 }
 
+function hasFiles(e: DragEvent): boolean {
+  const types = e.dataTransfer?.types;
+  if (!types) return false;
+  return Array.from(types).includes('Files');
+}
+
 export default function DropZone({ onFolderDropped, disabled, children }: Props) {
   const [dragging, setDragging] = useState(false);
   const [dragCounter, setDragCounter] = useState(0);
 
   const handleDragEnter = useCallback((e: DragEvent) => {
+    if (!hasFiles(e)) return;
     e.preventDefault();
     e.stopPropagation();
     if (disabled) return;
@@ -19,6 +26,7 @@ export default function DropZone({ onFolderDropped, disabled, children }: Props)
   }, [disabled]);
 
   const handleDragLeave = useCallback((e: DragEvent) => {
+    if (!hasFiles(e)) return;
     e.preventDefault();
     e.stopPropagation();
     setDragCounter(c => {
@@ -29,29 +37,27 @@ export default function DropZone({ onFolderDropped, disabled, children }: Props)
   }, []);
 
   const handleDragOver = useCallback((e: DragEvent) => {
+    if (!hasFiles(e)) return;
     e.preventDefault();
     e.stopPropagation();
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
   }, []);
 
   const handleDrop = useCallback((e: DragEvent) => {
+    if (!hasFiles(e)) return;
     e.preventDefault();
     e.stopPropagation();
     setDragging(false);
     setDragCounter(0);
     if (disabled) return;
 
-    // Get the File object from the drop event
-    const file = e.dataTransfer?.files?.[0] ?? e.dataTransfer?.items?.[0]?.getAsFile();
+    const itemFile = e.dataTransfer?.items?.[0]?.getAsFile();
+    const file = itemFile ?? e.dataTransfer?.files?.[0];
     if (!file) return;
 
-    // webUtils.getPathForFile must be called while the File is still a live
-    // reference — it is exposed via the preload and called here synchronously
     try {
       const path = window.electronAPI.getPathForFile(file);
-      if (path && path.trim()) {
-        onFolderDropped(path.trim());
-      }
+      if (path && path.trim()) onFolderDropped(path.trim());
     } catch (err) {
       console.error('[drop] getPathForFile failed:', err);
     }
@@ -107,9 +113,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '16px',
     background: '#0f1f14',
   },
-  overlayIcon: {
-    fontSize: '40px',
-  },
+  overlayIcon: { fontSize: '40px' },
   overlayText: {
     fontSize: '16px',
     color: '#4a9e5c',

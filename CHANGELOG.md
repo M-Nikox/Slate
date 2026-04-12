@@ -4,6 +4,36 @@ All notable changes to this project are documented in this file.
 
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses semantic versioning tags for releases.
 
+## [0.4.0] - 2026-04-11
+
+### Added
+- UI: drag to reorder files in manual mode — a drag handle column appears when manual mode is active, allowing files to be reordered before episode numbers are assigned.
+- UI: keyboard shortcuts — Ctrl+A (Cmd+A on Mac) selects all parsed rows; Enter triggers rename when files are selected; Space toggles the focused row's checkbox.
+- UI: footer now shows edited row count — e.g. `12 recognised · 3 edited · 2 skipped`.
+- UI: "Select low confidence" button in the footer — appears when low-confidence rows exist in auto mode, selects all of them for review in one click.
+- Build/dev: added explicit `typecheck` script for renderer/shared and main/preload TypeScript projects.
+- Build/dev: added Node engine constraint (`>=20.19.0`) to reduce environment mismatch across local/CI builds.
+
+### Changed
+- Drag-and-drop overlay behavior hardened: app-level folder drop overlay now only activates for external file drags, and no longer appears during internal table row reordering in manual mode.
+- App loading flow hardened against async race conditions when switching folders quickly (stale scan results no longer overwrite newer loads).
+- Keyboard Enter shortcut now ignores key-repeat to prevent accidental repeated rename triggers while key is held.
+- IPC contract cleanup: `set-title` moved to shared IPC channel constants (`IPC.SET_TITLE`) to avoid string drift between main/preload.
+- Main-process IPC handler registration hardened by removing existing handlers before re-registering, preventing duplicate handler errors in edge startup/test paths.
+- Path safety checks improved in file operations by using safer subpath checks for folder containment validation.
+- Preload bridge hardened with lightweight runtime guards for `setTitle` and `getPathForFile` inputs.
+- Build config cleanup and hardening:
+  - TypeScript config cleaned for strict JSON compatibility.
+  - Electron Vite config explicitly externalizes update/versioning runtime deps used in main process.
+  - Electron Builder config explicitly sets `asar`, `extraMetadata.main`, and includes README/LICENSE in packaged artifacts.
+
+### Fixed
+- Fixed TypeScript temporal-dead-zone error in `App.tsx` (`handleRename` used before declaration) by reordering callback/effect usage safely.
+- Fixed manual mode row drag UX issue where "Drop folder to scan" overlay appeared during internal row drag operations.
+- Fixed callback dependency risk for dropped-folder loading path by making folder-drop handler reference the current load function.
+- Fixed potential stale load-state update when multiple folder loads happen back-to-back.
+- Fixed JSONC-style comment in `tsconfig.main.json` that could break strict JSON tooling.
+
 ## [0.3.0] - 2026-04-11
 
 ### Added

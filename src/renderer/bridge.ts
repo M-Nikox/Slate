@@ -7,13 +7,13 @@ import type {
 } from '../shared/types.js';
 
 interface ElectronAPI {
-  pickFolder:   () => Promise<string | null>;
-  scanFolder:   (folderPath: string) => Promise<ScannedFile[]>;
-  renameFiles:  (folderPath: string, ops: RenameOperation[]) => Promise<RenameResult>;
-  checkUndo:    (folderPath: string) => Promise<CheckUndoResult>;
-  executeUndo:  (folderPath: string) => Promise<number>;
+  pickFolder: () => Promise<string | null>;
+  scanFolder: (folderPath: string) => Promise<ScannedFile[]>;
+  renameFiles: (folderPath: string, ops: RenameOperation[]) => Promise<RenameResult>;
+  checkUndo: (folderPath: string) => Promise<CheckUndoResult>;
+  executeUndo: (folderPath: string) => Promise<number>;
   checkForUpdates: () => Promise<UpdateCheckResponse>;
-  setTitle:     (title: string) => void;
+  setTitle: (title: string) => void;
   getPathForFile: (file: File) => string;
 }
 
@@ -23,13 +23,20 @@ declare global {
   }
 }
 
+function requireElectronAPI(): ElectronAPI {
+  if (!window.electronAPI) {
+    throw new Error('electronAPI is not available. Check preload configuration.');
+  }
+  return window.electronAPI;
+}
+
 export const bridge = {
-  pickFolder:  () => window.electronAPI.pickFolder(),
-  scanFolder:  (p: string) => window.electronAPI.scanFolder(p),
-  renameFiles: (p: string, ops: RenameOperation[]) => window.electronAPI.renameFiles(p, ops),
-  checkUndo:   (p: string) => window.electronAPI.checkUndo(p),
-  executeUndo: (p: string) => window.electronAPI.executeUndo(p),
-  checkForUpdates: () => window.electronAPI.checkForUpdates(),
-  setTitle:    (t: string) => window.electronAPI.setTitle(t),
-  getPathForFile: (file: File) => window.electronAPI.getPathForFile(file),
+  pickFolder: () => requireElectronAPI().pickFolder(),
+  scanFolder: (p: string) => requireElectronAPI().scanFolder(p),
+  renameFiles: (p: string, ops: RenameOperation[]) => requireElectronAPI().renameFiles(p, ops),
+  checkUndo: (p: string) => requireElectronAPI().checkUndo(p),
+  executeUndo: (p: string) => requireElectronAPI().executeUndo(p),
+  checkForUpdates: () => requireElectronAPI().checkForUpdates(),
+  setTitle: (t: string) => requireElectronAPI().setTitle(t),
+  getPathForFile: (file: File) => requireElectronAPI().getPathForFile(file),
 };
