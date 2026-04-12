@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses semantic versioning tags for releases.
 
-## [0.4.0] - 2026-04-11
+## [0.4.0] - 2026-04-12
 
 ### Added
 - UI: drag to reorder files in manual mode — a drag handle column appears when manual mode is active, allowing files to be reordered before episode numbers are assigned.
