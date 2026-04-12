@@ -207,6 +207,10 @@ export default function PreviewTable({
       e.preventDefault();
       return;
     }
+    // Setting effectAllowed + a payload makes the drag spec-compliant and
+    // ensures drop fires reliably across Chromium/Electron versions.
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
     setDragFromIndex(index);
   }
 
