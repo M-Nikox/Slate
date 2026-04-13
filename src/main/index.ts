@@ -24,6 +24,9 @@ function createWindow(): void {
     minHeight: 500,
     backgroundColor: '#0f0f0f',
     ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset' } : {}),
+    ...(process.platform !== 'darwin'
+      ? { icon: path.join(appRoot, 'build', 'icon.png') }
+      : {}),
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,
