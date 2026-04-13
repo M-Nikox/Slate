@@ -13,7 +13,6 @@ yarn-error.log*
 out/
 
 # General build/output folders
-build/
 release/
 dist/
 
