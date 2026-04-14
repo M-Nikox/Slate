@@ -333,7 +333,7 @@ export function executeUndo(folderPath: string): number {
   // ambiguous because it may also represent a read/parse failure; for any
   // non-ok status we return a non-zero value so corrupted/unreadable logs
   // are preserved for manual recovery.
-  const countPendingUndoEntries = (): number => {
+  const getPendingCountOrCorrupt = (): number => {
     const result = checkUndoLog(resolvedFolder);
     return result.status === 'ok' ? result.pending : 1;
   };
