@@ -17,6 +17,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0
   - Inline row editing and overrides
   - Keyboard shortcut reference
   - Build/release documentation alignment
+- Documentation consistency pass across `docs/` (Manual Mode authority note, command/checklist alignment, release-note wording consistency).
 
 ### Changed
 - Build: configured platform-specific app icons in `electron-builder.yml`:
