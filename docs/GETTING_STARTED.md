@@ -1,67 +1,75 @@
 # Getting Started
 
-This guide gets you from install to first successful rename in a few minutes.
+This guide gets you from install to first successful rename quickly.
 
 ## Requirements
 
 - Node.js `>=20.19.0`
 - npm
 
-## Install & Run
+## Install
 
 ```bash
 npm ci
+```
+
+## Run in Development
+
+```bash
 npm run dev
 ```
 
 ## First Rename (Auto Mode)
 
-1. Launch Slate
-2. Open a folder (or drag/drop a folder into the app)
-3. Review parsed rows in the preview table
-4. Select rows you want to rename
-5. Click **Rename**
+1. Open Slate.
+2. Choose a folder (or drag/drop a folder into the app).
+3. Review parsed rows in the preview table.
+4. Select the rows you want to rename.
+5. Click **Rename**.
 
-### Confidence Indicators
+## Confidence Indicators
 
-- **High confidence**: structured match patterns (safe by default)
-- **Low confidence**: ambiguous patterns; review before renaming
+Slate marks parser confidence per row:
 
-Use **Select low confidence** in the footer to quickly review uncertain rows.
+- **High confidence**: strongly structured match (e.g. `S01E02`, `1x02`)
+- **Low confidence**: potentially valid but ambiguous format, review recommended
 
-## Manual Mode (Deterministic Numbering)
+Use **Select low confidence** to quickly select and review uncertain rows.
 
-Use Manual Mode when filenames are inconsistent or parser confidence is low.
+## Manual Mode (Full Control)
 
-1. Enable **Manual Mode**
+Use Manual Mode when filenames are inconsistent or parsing is ambiguous.
+
+1. Enable **Manual Mode**.
 2. Set:
    - Show name
    - Season number
-   - Starting episode number
-3. (Optional) Reorder rows via drag handle
-4. Rename selected rows
+   - Starting episode
+3. Optionally reorder rows via drag handle.
+4. Rename selected rows.
 
-Manual Mode assigns episode numbers sequentially by current row order.
+In Manual Mode, episode numbering is sequential by the current row order.
 
-## Inline Edits
+## Inline Row Editing
 
-You can click a proposed name row and edit:
+You can override parser output per row:
 
-- Show name
-- Episode number
+- Click proposed name
+- Edit show name and/or episode number
+- Save with Enter/click-away
+- Cancel with Escape
+- Revert via the row’s clear/revert control
 
-Edited rows are marked as edited and can be reverted per row.
+Edited rows are visually marked.
 
-## Undo
+## Undo Last Batch
 
-Slate writes a per-folder undo log at:
+Slate stores undo metadata per folder in `.slate-undo.json`.
 
-- `.slate-undo.json`
-
-Use **Undo last batch** to revert the most recent rename set for that folder.
+Use **Undo last batch** to restore the most recent rename operation for that folder.
 
 ## Keyboard Shortcuts
 
 - `Ctrl+A` / `Cmd+A`: Select all parsed rows
-- `Enter`: Trigger rename (when selection is valid)
+- `Enter`: Trigger rename (when valid selection exists)
 - `Space`: Toggle focused row selection
