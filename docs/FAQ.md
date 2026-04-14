@@ -1,37 +1,33 @@
 # FAQ
 
+## What files is Slate for?
+
+Slate is built for TV/anime media filename cleanup and episode-format standardization.
+
 ## What does “low confidence” mean?
 
-Low confidence means Slate found a potentially valid parse, but the pattern is ambiguous compared to strongly structured formats like `S01E02`. You should review these rows before renaming.
+Low confidence means the parser found a plausible match, but the format is ambiguous. Review these rows before renaming.
 
 ## When should I use Manual Mode?
 
-Use Manual Mode when:
-- Source filenames are inconsistent
-- You want strict sequential numbering
-- You prefer explicit show/season/start-episode control
+Use Manual Mode when source filenames are inconsistent or when you want deterministic episode sequencing. You set show name, season, and start episode directly.
 
-## Can I reorder files before assigning episode numbers?
+## Can I reorder files before numbering?
 
-Yes. In Manual Mode, drag rows to reorder before rename. Sequence assignment follows the current row order.
+Yes. In Manual Mode, you can reorder rows and numbering follows that order.
 
-## Can I edit parser output per file?
+## Can I edit a single row without changing everything?
 
-Yes. Click a proposed row to edit show name and episode. Edited rows are marked and can be reverted.
+Yes. Inline editing lets you override show name/episode per row. Edited rows are marked and can be reverted.
 
-## Is renaming reversible?
+## Is rename reversible?
 
-Yes. Slate records the last batch in `.slate-undo.json` (per folder). Use Undo to revert the most recent batch.
+Yes. Slate writes undo metadata to `.slate-undo.json` in the target folder and supports undoing the latest batch.
 
-## What filename patterns are supported?
+## Why didn’t some files parse?
 
-Slate supports common TV/anime patterns including:
-- `S01E02`
-- `1x02`
-- `Season 1 Episode 2`
-- `Episode 2` / `Ep 2`
-- long episode values (e.g., `E198`)
+Some names are irregular or missing episode markers. Use Manual Mode or inline edits for those rows.
 
-## Why are some files not parsed?
+## Does Slate support long-running series episode numbers?
 
-Some release names are highly irregular or missing episode signals. Use Manual Mode or inline edits for those rows.
+Yes. Long episode numbers (including 3-digit episodes like `E198`) are supported.
