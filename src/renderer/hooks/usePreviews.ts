@@ -18,18 +18,35 @@ export interface PreviewRow {
 }
 
 function validateProposedName(name: string): { safety: 'safe' | 'warning' | 'blocked'; reasons: string[] } {
-  const reasons: string[] = [];
+  // Empty name is a hard block — nothing useful can be inferred.
+  const trimmedName = name.trim();
+  if (!trimmedName) {
+    return { safety: 'blocked', reasons: ['Destination name is empty.'] };
+  }
+
+  // For all other structural issues, emit a warning rather than blocked.
+  // The main process runs validateDestinationName (the authoritative policy)
+  // during preflight, so the renderer avoids false positives by not blocking
+  // early on checks it cannot fully replicate (e.g. full-path length on Windows).
+  const advisoryReasons: string[] = [];
   const invalidChars = /[<>:"/\\|?*\u0000-\u001F]/;
   const reserved = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i;
 
-  if (!name.trim()) reasons.push('Destination name is empty.');
-  if (invalidChars.test(name)) reasons.push('Destination name contains illegal characters.');
-  if (reserved.test(name)) reasons.push('Destination name uses a reserved Windows name.');
-  if (/[. ]$/.test(name)) reasons.push('Destination name ends with dot/space (not portable).');
-  if (name.length > 255) reasons.push('Destination name is too long.');
+  if (invalidChars.test(name)) {
+    advisoryReasons.push('Destination name may be rejected: contains illegal characters (confirmed during preflight).');
+  }
+  if (reserved.test(name)) {
+    advisoryReasons.push('Destination name may be rejected: uses a reserved Windows filename (confirmed during preflight).');
+  }
+  if (/[. ]$/.test(name)) {
+    advisoryReasons.push('Destination name may be rejected: ends with a dot or space (confirmed during preflight).');
+  }
+  if (name.length > 255) {
+    advisoryReasons.push('Destination name may be rejected: exceeds 255 characters (confirmed during preflight).');
+  }
 
-  return reasons.length > 0
-    ? { safety: 'blocked', reasons }
+  return advisoryReasons.length > 0
+    ? { safety: 'warning', reasons: advisoryReasons }
     : { safety: 'safe', reasons: [] };
 }
 
@@ -96,8 +113,12 @@ export function usePreviews(
       }
       const override = rowOverrides.get(file.path);
       const effectiveShowName = override?.showName ?? (overrideName.trim() || result.showName);
-      const effectiveEpisode = override?.episode ?? result.episode;
       const merged = applyEpisodeOverrideIfValid({ ...result, showName: effectiveShowName }, override?.episode);
+      // Derive effectiveEpisode from the validated merged object so the UI
+      // always reflects the episode number that will actually be used in the
+      // rename (applyEpisodeOverrideIfValid silently ignores invalid overrides
+      // such as 0 or NaN).
+      const effectiveEpisode = merged.episode;
       const proposed = buildName(merged);
       const reasons = [...(result.warnings ?? [])];
       let safety: 'safe' | 'warning' | 'blocked' = result.ambiguous ? 'warning' : 'safe';
@@ -105,8 +126,12 @@ export function usePreviews(
         reasons.push('Ambiguous low-confidence parse; review before renaming.');
       }
       const nameValidation = validateProposedName(proposed);
-      if (nameValidation.safety === 'blocked') {
-        safety = 'blocked';
+      if (nameValidation.safety !== 'safe') {
+        // 'blocked' (empty name) overrides any prior safety; 'warning' only
+        // escalates — it won't downgrade an existing 'blocked' from elsewhere.
+        if (nameValidation.safety === 'blocked' || safety === 'safe') {
+          safety = nameValidation.safety;
+        }
         reasons.push(...nameValidation.reasons);
       }
       return {
