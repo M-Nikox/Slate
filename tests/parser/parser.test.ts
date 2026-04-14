@@ -144,6 +144,27 @@ describe('parseFilename — alternate formats', () => {
     expect(r!.season).toBe(1);
     expect(r!.episode).toBe(6);
   });
+
+  it('parses bare E### (defaults to season 1)', () => {
+    const r = parseFilename('One Piece E198.mkv');
+    expect(r!.showName).toBe('One Piece');
+    expect(r!.season).toBe(1);
+    expect(r!.episode).toBe(198);
+  });
+
+  it('parses bare E### with standalone S## season token', () => {
+    const r = parseFilename('One Piece S20 E198.mkv');
+    expect(r!.showName).toBe('One Piece');
+    expect(r!.season).toBe(20);
+    expect(r!.episode).toBe(198);
+  });
+
+  it('parses Ep### with standalone Season ## token', () => {
+    const r = parseFilename('One Piece Season 20 Ep 198.mkv');
+    expect(r!.showName).toBe('One Piece');
+    expect(r!.season).toBe(20);
+    expect(r!.episode).toBe(198);
+  });
 });
 
 describe('parseFilename — extensions', () => {
@@ -176,6 +197,32 @@ describe('parseFilename — unrecognised input', () => {
 
   it('returns null for a bare filename', () => {
     expect(parseFilename('video.mkv')).toBeNull();
+  });
+});
+
+describe('parseFilename — determinism and structural guards', () => {
+  it('normalizes unicode whitespace before parsing', () => {
+    const r = parseFilename('Show\u00A0Name\u2009S01E02.mkv');
+    expect(r).not.toBeNull();
+    expect(r!.showName).toBe('Show Name');
+    expect(r!.season).toBe(1);
+    expect(r!.episode).toBe(2);
+  });
+
+  it('rejects season 0 in explicit season patterns', () => {
+    expect(parseFilename('Bad.Show.S00E01.mkv')).toBeNull();
+  });
+
+  it('rejects episode 0 in explicit episode patterns', () => {
+    expect(parseFilename('Bad.Show.S01E00.mkv')).toBeNull();
+  });
+
+  it('flags ambiguous low-confidence parses explicitly', () => {
+    const r = parseFilename('Show - 307.mkv');
+    expect(r).not.toBeNull();
+    expect(r!.confidence).toBe('low');
+    expect(r!.ambiguous).toBe(true);
+    expect(r!.warnings).toContain('ambiguous-low-confidence-parse');
   });
 });
 
