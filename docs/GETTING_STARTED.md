@@ -68,7 +68,7 @@ Edited rows are visually marked.
 
 Slate stores undo metadata per folder in `.slate-undo.json`.
 
-Use **Undo last batch** to restore the most recent rename operation for that folder.
+Use **Undo Rename** to restore the most recent rename operation for that folder.
 
 ## Keyboard Shortcuts
 
