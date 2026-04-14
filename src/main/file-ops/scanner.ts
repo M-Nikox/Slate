@@ -19,7 +19,8 @@ export function scanFolder(folderPath: string): ScannedFile[] {
     throw new Error(`Not a directory: ${resolvedFolder}`);
   }
 
-  const entries = fs.readdirSync(resolvedFolder, { withFileTypes: true });
+  const entries = fs.readdirSync(resolvedFolder, { withFileTypes: true })
+    .sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true, sensitivity: 'base' }) || a.name.localeCompare(b.name));
   const results: ScannedFile[] = [];
 
   for (const entry of entries) {
