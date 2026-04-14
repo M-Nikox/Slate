@@ -415,7 +415,14 @@ export function executeUndo(folderPath: string): number {
   for (const op of valid) {
     if (!executable.includes(op)) {
       console.warn(`[undo] Original path already occupied, skipping: ${op.to}`);
-      markEntry({ original: op.to, renamed: op.from }, { status: 'skipped', lastError: 'original-occupied' });
+      // Use op.original (the log-facing entry identity) so markEntry can match
+      // the actual undo-log entry. op.from may be a staging temp path (derived
+      // from currentPath) rather than the entry's `renamed` field, which would
+      // prevent a match and leave the skip status unpersisted.
+      const logEntry = op.original
+        ? { original: op.original.to, renamed: op.original.from }
+        : { original: op.to, renamed: op.from };
+      markEntry(logEntry, { status: 'skipped', lastError: 'original-occupied' });
     }
   }
 
