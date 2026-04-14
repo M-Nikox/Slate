@@ -16,15 +16,15 @@ npm ci
 | Command | Purpose |
 |---|---|
 | `npm run dev` | Start app in development mode |
-| `npm run build` | Build main, preload, renderer into `out/` |
+| `npm run build` | Build main, preload, and renderer into `out/` |
 | `npm run start` | Preview built output |
 | `npm run test` | Run test suite (Vitest) |
-| `npm run typecheck` | Type-check renderer/shared + main/preload |
-| `npm run package` | Build + package via Electron Builder |
+| `npm run typecheck` | Type-check renderer/shared and main/preload |
+| `npm run package` | Build and package installers/artifacts via Electron Builder |
 
-## Code Quality Expectations
+## Before Opening a Pull Request
 
-Before opening a PR, run:
+Run:
 
 ```bash
 npm run typecheck
@@ -32,20 +32,25 @@ npm run test
 npm run build
 ```
 
-## Implementation Notes
+## Development Notes
 
 - Keep IPC channel names centralized in shared constants to avoid string drift.
 - Avoid duplicate IPC handler registration in edge startup/test paths.
-- Prefer strict JSON-compatible config formatting to maintain tooling compatibility.
-- For parser changes, include tests for:
-  - successful parsing behavior
-  - confidence classification (`high` / `low`)
-  - naming output (`build-name`) where relevant
+- Prefer strict JSON-compatible formatting in config files to preserve tooling compatibility.
+- Keep renderer UI concerns separate from main-process filesystem/rename concerns.
 
-## Suggested Workflow for Feature Changes
+## Testing Guidance
 
-1. Add/adjust tests
-2. Implement feature
-3. Verify parser/UI behavior manually
-4. Run typecheck/test/build
+For parser or naming changes, add or update tests for:
+
+- Parse success/failure behavior
+- Confidence classification (`high` / `low`)
+- Name formatting output (including long episode values where relevant)
+
+## Recommended Workflow
+
+1. Add or update tests
+2. Implement feature/fix
+3. Validate behavior manually in app
+4. Run `typecheck`, `test`, and `build`
 5. Update docs and changelog for user-facing changes
