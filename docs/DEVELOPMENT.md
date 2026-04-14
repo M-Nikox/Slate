@@ -1,72 +1,51 @@
 # Development Guide
 
-## Local Workflow
+## Prerequisites
+
+- Node.js `>=20.19.0`
+- npm
+
+## Setup
 
 ```bash
 npm ci
-npm run test
-npm run dev
 ```
 
-Before opening a PR:
+## Common Commands
+
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Start app in development mode |
+| `npm run build` | Build main, preload, renderer into `out/` |
+| `npm run start` | Preview built output |
+| `npm run test` | Run test suite (Vitest) |
+| `npm run typecheck` | Type-check renderer/shared + main/preload |
+| `npm run package` | Build + package via Electron Builder |
+
+## Code Quality Expectations
+
+Before opening a PR, run:
 
 ```bash
+npm run typecheck
 npm run test
 npm run build
 ```
 
-## Daily Commands
+## Implementation Notes
 
-| Task | Command |
-|---|---|
-| Run tests | `npm run test` |
-| Start dev app | `npm run dev` |
-| Build app | `npm run build` |
-| Preview built app | `npm run start` |
-| Package app | `npm run package` |
+- Keep IPC channel names centralized in shared constants to avoid string drift.
+- Avoid duplicate IPC handler registration in edge startup/test paths.
+- Prefer strict JSON-compatible config formatting to maintain tooling compatibility.
+- For parser changes, include tests for:
+  - successful parsing behavior
+  - confidence classification (`high` / `low`)
+  - naming output (`build-name`) where relevant
 
-## Conventions
+## Suggested Workflow for Feature Changes
 
-- TypeScript-first modules
-- Keep process boundaries explicit (main vs preload vs renderer)
-- Keep IPC payloads validated in main handlers
-- Reuse shared types from `src/shared/types.ts`
-
-⚠️ Never bypass preload by enabling Node integration in renderer.
-
-## Testing (Vitest)
-
-- Config: `vitest.config.ts`
-- Pattern: `tests/**/*.test.ts`
-- Current coverage areas include parser and renderer utility logic.
-
-Run:
-
-```bash
-npm run test
-```
-
-## Debugging Tips
-
-- `npm run dev` opens DevTools in development mode.
-- Main process logs appear in terminal output.
-- Renderer issues appear in DevTools console.
-
-💡 If preview/start fails to load dev URL, verify you are using `dev` vs `start` appropriately.
-
-## Adding a New Feature
-
-1. Define/extend shared types if needed.
-2. Add/update IPC channels.
-3. Implement validated handler in `src/main/ipc/handlers.ts`.
-4. Expose API in preload.
-5. Consume API in renderer components/hooks.
-6. Add/update Vitest tests.
-7. Run test + build locally.
-
-## Security Practices
-
-- Validate all file-system inputs in main process.
-- Resolve paths and enforce folder boundaries.
-- Avoid direct renderer file-system access.
-- Keep context isolation enabled.
+1. Add/adjust tests
+2. Implement feature
+3. Verify parser/UI behavior manually
+4. Run typecheck/test/build
+5. Update docs and changelog for user-facing changes
