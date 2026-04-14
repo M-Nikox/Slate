@@ -16,6 +16,21 @@ const devServerUrl = process.env.ELECTRON_RENDERER_URL;
 let mainWindow: BrowserWindow | null = null;
 const isDev = !app.isPackaged;
 
+/**
+ * Resolve a window icon path that works in both:
+ * - dev (running from repo): build/icon.png
+ * - packaged (running from asar + resources): <resources>/icons/icon.png
+ *
+ * electron-builder.yml will place build/icon.png at resources/icons/icon.png via extraResources.
+ */
+function resolveWindowIcon(): string {
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, 'icons', 'icon.png');
+  }
+
+  return path.join(appRoot, 'build', 'icon.png');
+}
+
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1100,
@@ -24,9 +39,7 @@ function createWindow(): void {
     minHeight: 500,
     backgroundColor: '#0f0f0f',
     ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset' } : {}),
-    ...(process.platform !== 'darwin'
-      ? { icon: path.join(appRoot, 'build', 'icon.png') }
-      : {}),
+    ...(process.platform !== 'darwin' ? { icon: resolveWindowIcon() } : {}),
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,
