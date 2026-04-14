@@ -32,6 +32,13 @@ export type UndoLogCheckResult =
   | { status: 'mismatch'; error: string }
   | { status: 'io-error'; error: string };
 
+function getParsedUndoLogFolderPath(value: unknown): string | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+
+  const candidate = (value as { folderPath?: unknown }).folderPath;
+  return typeof candidate === 'string' ? candidate : undefined;
+}
+
 export function checkUndoLog(folderPath: string): UndoLogCheckResult {
   const logPath = undoLogPath(folderPath);
   if (!fs.existsSync(logPath)) return { status: 'no-log' };
@@ -50,14 +57,19 @@ export function checkUndoLog(folderPath: string): UndoLogCheckResult {
     return { status: 'invalid', error: `JSON parse error: ${e instanceof Error ? e.message : String(e)}` };
   }
 
+  const parsedFolderPath = getParsedUndoLogFolderPath(parsed);
+  if (parsedFolderPath !== undefined && parsedFolderPath !== folderPath) {
+    return {
+      status: 'mismatch',
+      error: `Undo log folderPath mismatch: expected "${folderPath}" but found "${parsedFolderPath}"`,
+    };
+  }
+
   try {
     const log = normalizeUndoLog(parsed, folderPath);
     return { status: 'ok', pending: log.operations.filter(isPendingUndo).length };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    if (msg.toLowerCase().includes('mismatch')) {
-      return { status: 'mismatch', error: msg };
-    }
     return { status: 'invalid', error: msg };
   }
 }
