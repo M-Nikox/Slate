@@ -39,6 +39,21 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0
 - Added `tests/main/scanner.test.ts` to verify deterministic scan ordering.
 - Added parser determinism/safety tests for unicode whitespace normalization, invalid season/episode rejection, and explicit ambiguous low-confidence warning signaling.
 
+### Extra Fixes
+Staging Durability:
+- Add currentPath? to UndoEntry to track staging temp location
+- Add stagingFor? to PlannedOperation to link staging steps to owning op
+- executeRename: write currentPath before staging rename; clear after final
+- executeUndo: include currentPath entries in candidates; use currentPath
+  as file source when it exists (enables crash recovery from any step)
+
+Safe Log Deletion:
+- checkUndoLog now returns UndoLogCheckResult discriminated union:
+  no-log | ok(pending) | invalid | mismatch | io-error
+- executeUndo deletes log only when status===ok && pending===0
+- Parse/schema/mismatch errors preserve log and surface console.error
+- handlers.ts updated to consume structured result
+
 ## [0.4.1] - 2026-04-14
 
 ### Added
