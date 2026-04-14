@@ -6,7 +6,7 @@ Slate is built for TV/anime media filename cleanup and episode-format standardiz
 
 ## What does “low confidence” mean?
 
-Low confidence means the parser found a plausible match, but the format is ambiguous. Review these rows before renaming.
+Low confidence means Slate found a plausible parse, but the format is ambiguous compared to structured patterns. Review these rows before renaming.
 
 ## When should I use Manual Mode?
 
