@@ -7,6 +7,8 @@ export interface ParseResult {
   episodeEnd?: number;
   extension: string;
   confidence: Confidence;
+  ambiguous?: boolean;
+  warnings?: string[];
 }
 
 export interface ManualModeConfig {
@@ -33,18 +35,31 @@ export interface RenameOperation {
 export interface UndoEntry {
   original: string;   // absolute path before rename
   renamed: string;    // absolute path after rename
+  applied?: boolean;
+  status?: 'pending' | 'done' | 'skipped';
+  lastError?: string;
 }
 
 export interface UndoLog {
-  version: 1;
+  version: 1 | 2;
   timestamp: string;
   folderPath: string;
   operations: UndoEntry[];
 }
 
+export type RenameIssueSeverity = 'warning' | 'blocked';
+
+export interface RenameIssue {
+  severity: RenameIssueSeverity;
+  code: string;
+  message: string;
+  op?: RenameOperation;
+}
+
 export interface RenameResult {
   succeeded: RenameOperation[];
   failed: { op: RenameOperation; error: string } | null;
+  issues?: RenameIssue[];
 }
 
 export interface CheckUndoResult {
