@@ -11,7 +11,7 @@
     "isolatedModules": true,
     "esModuleInterop": true,
     "typeRoots": ["./node_modules/@types"],
-    "types": ["node", "electron"]
+    "types": ["node"]
   },
   "include": [
     "src/main/**/*", 
