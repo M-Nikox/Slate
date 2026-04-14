@@ -11,6 +11,12 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0
   - `assets/icon.icns` (macOS)
   - `assets/icon.ico` (Windows)
   - `assets/icon.png` (Linux/general)
+- Documentation refresh across root and `docs/` to better reflect current application behavior:
+  - Manual Mode workflow and sequencing
+  - Confidence-based review (`high` / `low`)
+  - Inline row editing and overrides
+  - Keyboard shortcut reference
+  - Build/release documentation alignment
 
 ### Changed
 - Build: configured platform-specific app icons in `electron-builder.yml`:
