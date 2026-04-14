@@ -1,45 +1,33 @@
 # FAQ
 
-## Why are some files skipped?
+## What files is Slate for?
 
-Slate only scans supported media extensions:
+Slate is built for TV/anime media filename cleanup and episode-format standardization.
 
-`.mkv`, `.mp4`, `.avi`, `.mov`, `.m4v`, `.wmv`, `.flv`, `.webm`.
+## What does “low confidence” mean?
 
-## Why wasn’t a filename parsed?
+Low confidence means Slate found a plausible parse, but the format is ambiguous compared to structured patterns. Review these rows before renaming.
 
-Some filenames do not match current parser patterns (for example missing season/episode signals or unusual naming conventions).
+## When should I use Manual Mode?
 
-## Can I undo a rename?
+Use Manual Mode when source filenames are inconsistent or when you want deterministic episode sequencing. You set show name, season, and start episode directly.
 
-Yes. Slate writes a `.slate-undo.json` file in the folder before renaming. If present, use the **Undo** action in the app.
+## Can I reorder files before numbering?
 
-## Why can’t I select any folder path over IPC?
+Yes. In Manual Mode, you can reorder rows and numbering follows that order.
 
-Main-process handlers validate that paths are:
+## Can I edit a single row without changing everything?
 
-- non-empty strings
-- absolute paths
-- existing directories
+Yes. Inline editing lets you override show name/episode per row. Edited rows are marked and can be reverted.
 
-This is intentional for safety.
+## Is rename reversible?
 
-## `npm run test` fails with `vitest: not found`
+Yes. Slate writes undo metadata to `.slate-undo.json` in the target folder and supports undoing the latest batch.
 
-Install dependencies first:
+## Why didn’t some files parse?
 
-```bash
-npm ci
-```
+Some names are irregular or missing episode markers. Use Manual Mode or inline edits for those rows.
 
-Then run:
+## Does Slate support long-running series episode numbers?
 
-```bash
-npm run test
-```
-
-## Why does packaging fail in headless Linux environments?
-
-Electron packaging/runtime may require desktop/Chromium sandbox capabilities that are limited in some headless environments.
-
-💡 Use a local desktop environment for final packaging verification when needed.
+Yes. Long episode numbers (including 3-digit episodes like `E198`) are supported.

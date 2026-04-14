@@ -1,72 +1,56 @@
 # Development Guide
 
-## Local Workflow
+## Prerequisites
+
+- Node.js `>=20.19.0`
+- npm
+
+## Setup
 
 ```bash
 npm ci
-npm run test
-npm run dev
 ```
 
-Before opening a PR:
+## Common Commands
 
-```bash
-npm run test
-npm run build
-```
-
-## Daily Commands
-
-| Task | Command |
+| Command | Purpose |
 |---|---|
-| Run tests | `npm run test` |
-| Start dev app | `npm run dev` |
-| Build app | `npm run build` |
-| Preview built app | `npm run start` |
-| Package app | `npm run package` |
+| `npm run dev` | Start app in development mode |
+| `npm run build` | Build main, preload, and renderer into `out/` |
+| `npm run start` | Preview built output |
+| `npm run test` | Run test suite (Vitest) |
+| `npm run typecheck` | Type-check renderer/shared and main/preload |
+| `npm run package` | Build and package installers/artifacts via Electron Builder |
 
-## Conventions
-
-- TypeScript-first modules
-- Keep process boundaries explicit (main vs preload vs renderer)
-- Keep IPC payloads validated in main handlers
-- Reuse shared types from `src/shared/types.ts`
-
-⚠️ Never bypass preload by enabling Node integration in renderer.
-
-## Testing (Vitest)
-
-- Config: `vitest.config.ts`
-- Pattern: `tests/**/*.test.ts`
-- Current coverage areas include parser and renderer utility logic.
+## Before Opening a Pull Request
 
 Run:
 
 ```bash
+npm run typecheck
 npm run test
+npm run build
 ```
 
-## Debugging Tips
+## Development Notes
 
-- `npm run dev` opens DevTools in development mode.
-- Main process logs appear in terminal output.
-- Renderer issues appear in DevTools console.
+- Keep IPC channel names centralized in shared constants to avoid string drift.
+- Avoid duplicate IPC handler registration in edge startup/test paths.
+- Prefer strict JSON-compatible formatting in config files to preserve tooling compatibility.
+- Keep renderer UI concerns separate from main-process filesystem/rename concerns.
 
-💡 If preview/start fails to load dev URL, verify you are using `dev` vs `start` appropriately.
+## Testing Guidance
 
-## Adding a New Feature
+For parser or naming changes, add or update tests for:
 
-1. Define/extend shared types if needed.
-2. Add/update IPC channels.
-3. Implement validated handler in `src/main/ipc/handlers.ts`.
-4. Expose API in preload.
-5. Consume API in renderer components/hooks.
-6. Add/update Vitest tests.
-7. Run test + build locally.
+- Parse success/failure behavior
+- Confidence classification (`high` / `low`)
+- Name formatting output (including long episode values where relevant)
 
-## Security Practices
+## Recommended Workflow
 
-- Validate all file-system inputs in main process.
-- Resolve paths and enforce folder boundaries.
-- Avoid direct renderer file-system access.
-- Keep context isolation enabled.
+1. Add or update tests
+2. Implement feature/fix
+3. Validate behavior manually in app
+4. Run `typecheck`, `test`, and `build`
+5. Update docs and changelog for user-facing changes

@@ -1,64 +1,43 @@
-# Build & Release
+# Build and Release
 
-## Build Pipeline
-
-Slate uses:
-
-- `electron-vite` for app builds
-- `electron-builder` for distributables
-
-## Build Locally
+## Local Build
 
 ```bash
 npm run build
+npm run start
 ```
 
-This compiles:
-
-- main process → `out/main`
-- preload script → `out/preload`
-- renderer app → `out/renderer`
-
-## Package Locally
+## Package Artifacts
 
 ```bash
 npm run package
 ```
 
-Equivalent script flow:
+This builds and packages installers/artifacts using `electron-builder.yml`.
 
-```shell
-npm run build && electron-builder --publish never --config electron-builder.yml
-```
+## Platform Icons / Branding
 
-Artifacts are generated in `dist/`.
+Slate uses platform-specific icon assets:
 
-## Distributable Targets
+- macOS: `assets/icon.icns`
+- Windows: `assets/icon.ico`
+- Linux/general: `assets/icon.png`
 
-| Platform | Targets |
-|---|---|
-| Linux | `AppImage`, `zip` |
-| macOS | `dmg`, `zip` |
-| Windows | `nsis`, `zip` |
+NSIS installer branding also uses Windows icon assets configured in builder settings.
 
-## CI Release Behavior
+## Release Notes
 
-From `.github/workflows/ci.yml`:
+`CHANGELOG.md` is the source of truth for release notes.
 
-- On PRs: test/build + lightweight Linux packaging
-- On `v*` tags: test/build + Linux/macOS/Windows packaging + release asset publish
+For each release tag:
 
-✅ This keeps PR CI fast while keeping tagged releases complete.
+1. Ensure a matching version section exists in `CHANGELOG.md`
+2. Ensure content is complete and user-facing
+3. Publish tag/release via CI flow
 
-## Versioning
+Missing changelog sections should fail release-note generation workflows by design.
 
-- App version is defined in `package.json` (`version`).
-- Use semantic version tags (`vX.Y.Z`) to trigger full release workflows.
+## CI Notes
 
-## Recommended Release Steps
-
-1. Ensure `npm run test` and `npm run build` pass.
-2. Bump `package.json` version.
-3. Update `CHANGELOG.md`.
-4. Create and push tag `vX.Y.Z`.
-5. Verify CI artifacts and published release assets.
+- CI validates build/test/release flow.
+- Desktop packaging can differ in headless environments; local desktop packaging is the reference path for final artifact sanity checks.

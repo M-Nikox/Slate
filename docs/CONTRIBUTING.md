@@ -1,53 +1,40 @@
 # Contributing
 
-Thanks for helping improve Slate. Keep contributions focused, tested, and easy to review.
+Thanks for contributing to Slate.
 
-## Workflow
-
-1. Fork and create a branch from `master`.
-2. Make focused changes.
-3. Run tests and build locally.
-4. Open a PR with clear context.
-
-## Branching Strategy
-
-Use short, descriptive branch names:
-
-- `feat/parser-anime-patterns`
-- `fix/undo-log-validation`
-- `docs/readme-refresh`
-
-## Commit Guidelines
-
-- Prefer concise, imperative messages
-- Keep one logical change per commit
-
-Examples:
-
-- `feat: add update-check status UI`
-- `fix: validate IPC folder path before scan`
-- `docs: refresh architecture guide`
-
-## Local Validation
+## Setup
 
 ```bash
+npm ci
+npm run dev
+```
+
+## Before You Open a PR
+
+Run:
+
+```bash
+npm run typecheck
 npm run test
 npm run build
 ```
 
-For packaging-related work:
+## Contribution Standards
 
-```bash
-npm run package
-```
+- Keep changes focused and well-scoped.
+- Add tests for parser/rename behavior changes.
+- Update docs when UX/flow changes (especially Manual Mode, confidence behavior, shortcuts).
+- Add changelog entries for user-visible changes.
 
-## Pull Request Checklist
+## PR Guidelines
 
-- [ ] Change is scoped and intentional
-- [ ] Tests added/updated when behavior changes
-- [ ] `npm run test` passes
-- [ ] `npm run build` passes
-- [ ] Docs updated if user-facing or dev-facing behavior changed
-- [ ] PR description includes motivation and verification steps
+- Use clear, descriptive PR titles.
+- Explain user impact and implementation details.
+- Include screenshots/GIFs for UI changes when useful.
+- Link related issues if applicable.
 
-⚠️ If your change touches IPC or file operations, explicitly document safety/validation considerations in the PR.
+## Code Style / Architecture Notes
+
+- Keep IPC constants centralized (avoid duplicated channel strings).
+- Prefer safe path validation and main-process checks for file operations.
+- Preserve clear separation between renderer UI concerns and main-process filesystem logic.

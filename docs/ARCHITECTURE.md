@@ -1,78 +1,55 @@
 # Architecture
 
-Slate uses Electron + React + TypeScript with clear process boundaries.
+Slate is an Electron desktop app with a React renderer and TypeScript across renderer/shared/main.
 
-## Stack Rationale
+## High-Level Structure
 
-- **Electron**: cross-platform desktop shell with native file access
-- **React**: fast, component-based UI for previews and interactions
-- **TypeScript**: shared typing across main, preload, renderer, and parser logic
-- **electron-vite**: modern build pipeline for Electron apps
+- **Renderer (React)**
+  - Folder selection and drag/drop UX
+  - Preview table and selection state
+  - Manual Mode controls
+  - Inline row editing (overrides)
+  - Confidence-aware review actions
 
-## Runtime Boundaries
+- **Preload Bridge**
+  - Safe, minimal API exposure from main to renderer
+  - Runtime guards on exposed methods
 
-| Layer | Responsibility | Key Files |
-|---|---|---|
-| Main process | Window lifecycle, IPC handlers, file operations, updater | `src/main/index.ts`, `src/main/ipc/handlers.ts` |
-| Preload | Secure bridge between renderer and IPC | `src/preload/preload.ts` |
-| Renderer | UI, user interaction, preview state, drag/drop | `src/renderer/App.tsx` |
-| Shared | Types, parser logic, IPC channel constants | `src/shared/types.ts`, `src/shared/parser/*`, `src/shared/ipc-channels.ts` |
+- **Main Process**
+  - Folder scanning
+  - Rename planning and execution
+  - Path validation and safety checks
+  - Undo log persistence (`.slate-undo.json`)
+  - Window/app lifecycle and shell integration
 
-## Folder Structure
+- **Shared Layer**
+  - Parser logic and confidence tagging
+  - Name-building utilities
+  - Shared types and IPC channel constants
 
-```text
-src/
-  main/
-    file-ops/
-    ipc/
-    undo/
-    index.ts
-  preload/
-    preload.ts
-  renderer/
-    components/
-    hooks/
-    App.tsx
-    main.tsx
-  shared/
-    parser/
-    ipc-channels.ts
-    types.ts
-tests/
-  parser/
-  renderer/
-```
+## Core Data Concepts
 
-## Data Flow
+### Parse Confidence
 
-```text
-Renderer UI
-  -> preload bridge (contextBridge)
-  -> IPC channels
-  -> main handlers
-  -> scanner/parser/renamer/undo/update logic
-  -> result back to renderer
-  -> UI refresh
-```
+Each parse result includes confidence metadata:
 
-## Rename Flow (High-Level)
+- `high`: strongly structured patterns
+- `low`: ambiguous patterns that should be reviewed
 
-1. Renderer requests folder scan.
-2. Main validates absolute directory path.
-3. Scanner returns media files.
-4. Renderer uses shared parser to generate preview names.
-5. Renderer sends selected rename operations.
-6. Main validates operations and writes undo log.
-7. Main renames files and returns success/failure summary.
+Confidence drives row styling and review helpers.
 
-✅ Safety-first details:
-- absolute path checks
-- “inside target folder” checks
-- no overwrite of existing destination files
-- undo log written before mutation
+### Row Overrides
 
-## Build Outputs
+Inline edits are stored as per-row overrides and take precedence over parser-derived values in preview and execution.
 
-- Main bundle: `out/main/index.js`
-- Preload bundle: `out/preload/index.cjs`
-- Renderer bundle: `out/renderer/index.html`
+### Manual Mode Authority
+
+When Manual Mode is enabled:
+
+- parser output does not drive naming
+- show/season/start episode plus row order become the naming source
+- row order directly affects assigned episode sequence
+
+### Undo Model
+
+After a successful batch rename, Slate writes undo data to a per-folder `.slate-undo.json` file. Undo uses this file to restore the latest batch.

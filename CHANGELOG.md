@@ -4,13 +4,20 @@ All notable changes to this project are documented in this file.
 
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses semantic versioning tags for releases.
 
-## [0.4.1] - 2026-04-13
+## [0.4.1] - 2026-04-14
 
 ### Added
 - Branding assets for desktop packaging:
   - `assets/icon.icns` (macOS)
   - `assets/icon.ico` (Windows)
   - `assets/icon.png` (Linux/general)
+- Documentation refresh across root and `docs/` to better reflect current application behavior:
+  - Manual Mode workflow and sequencing
+  - Confidence-based review (`high` / `low`)
+  - Inline row editing and overrides
+  - Keyboard shortcut reference
+  - Build/release documentation alignment
+- Documentation consistency pass across `docs/` (Manual Mode authority note, command/checklist alignment, release-note wording consistency).
 
 ### Changed
 - Build: configured platform-specific app icons in `electron-builder.yml`:
