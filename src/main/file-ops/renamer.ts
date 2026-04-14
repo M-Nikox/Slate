@@ -53,7 +53,15 @@ function validateOperation(op: RenameOperation, folderPath: string): string | nu
 interface PlannedOperation {
   from: string;
   to: string;
+  /** The user-facing operation this step completes (final rename step). */
   original?: RenameOperation;
+  /**
+   * Set on cycle/swap staging steps (`from → tempPath`) to link the staging
+   * rename to its owning user-facing operation. This lets the execution loop
+   * durably record `currentPath` in the undo log before the staging rename
+   * runs, enabling crash recovery even when `applied` is still false.
+   */
+  stagingFor?: RenameOperation;
 }
 
 function pathKey(p: string, caseInsensitive: boolean): string {
@@ -112,7 +120,7 @@ function buildDeterministicPlan(folderPath: string, operations: PlannedOperation
     const cycleOp = pending[cycleIndex];
     const tempPath = makeTempPath(folderPath, cycleOp.from, occupied, caseInsensitive);
     occupied.add(pathKey(tempPath, caseInsensitive));
-    plan.push({ from: cycleOp.from, to: tempPath });
+    plan.push({ from: cycleOp.from, to: tempPath, stagingFor: cycleOp.original });
     pending[cycleIndex] = { ...cycleOp, from: tempPath };
   }
 
@@ -268,24 +276,31 @@ export function executeRename(folderPath: string, operations: RenameOperation[])
     const to = path.resolve(op.to);
 
     try {
-      // Mark applied *before* the rename so a crash after renameSync but before
-      // the log update doesn't silently drop the entry from undo candidates.
-      // The existing `renamed-not-found` guard in executeUndo handles the
-      // converse case where the rename never ran but the entry is marked applied.
-      if (op.original) {
+      if (op.stagingFor) {
+        // Before staging rename: durably record where the file will be stored
+        // temporarily so that crash recovery can locate and restore it even
+        // when `applied` remains false for the owning user-facing entry.
+        updateUndoEntry(op.stagingFor.from, op.stagingFor.to, { currentPath: to });
+      } else if (op.original) {
+        // Before user-facing rename: mark applied so a crash after renameSync
+        // but before the log update is still represented in undo candidates.
+        // The existing `renamed-not-found` guard handles the converse case.
         updateUndoEntry(op.original.from, op.original.to, { applied: true });
       }
       fs.renameSync(from, to);
       if (op.original) {
+        // Rename completed: clear any staging currentPath from an earlier step
+        // so the entry now cleanly points to its final `renamed` location.
+        updateUndoEntry(op.original.from, op.original.to, { currentPath: undefined });
         succeeded.push(op.original);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return {
         succeeded,
-        // Report the user-facing operation (op.original) rather than the
-        // internal step, which may be a .slate-tmp-* staging path.
-        failed: { op: op.original ?? { from, to }, error: message },
+        // Report the user-facing operation rather than the internal step, which
+        // may be a .slate-tmp-* staging path.
+        failed: { op: op.original ?? op.stagingFor ?? { from, to }, error: message },
         issues,
       };
     }
@@ -296,10 +311,33 @@ export function executeRename(folderPath: string, operations: RenameOperation[])
 
 export function executeUndo(folderPath: string): number {
   const resolvedFolder = path.resolve(folderPath);
-  if (checkUndoLog(resolvedFolder) === 0) {
+
+  // Use the structured check result so we only delete the log when we can
+  // confirm it is valid and has zero pending entries. Parse/schema/mismatch
+  // errors must preserve the log to allow manual recovery.
+  const checkResult = checkUndoLog(resolvedFolder);
+  if (checkResult.status === 'no-log') return 0;
+  if (checkResult.status !== 'ok') {
+    // Non-ok statuses (invalid, mismatch, io-error): preserve the log and
+    // surface a warning. Deleting here could destroy a recoverable log.
+    console.error(`[undo] Cannot read undo log for ${resolvedFolder}: ${checkResult.error}`);
+    return 0;
+  }
+  if (checkResult.pending === 0) {
     deleteUndoLog(resolvedFolder);
     return 0;
   }
+
+  // Keep later deletion checks in this function consistent with the
+  // structured validation above. Returning 0 from the imported helper is
+  // ambiguous because it may also represent a read/parse failure; for any
+  // non-ok status we return a non-zero value so corrupted/unreadable logs
+  // are preserved for manual recovery.
+  const countPendingUndoEntries = (): number => {
+    const result = checkUndoLog(resolvedFolder);
+    return result.status === 'ok' ? result.pending : 1;
+  };
+
   const log = readUndoLog(resolvedFolder);
 
   const caseInsensitive = process.platform === 'win32' || process.platform === 'darwin';
@@ -315,22 +353,52 @@ export function executeUndo(folderPath: string): number {
     });
   };
 
+  // Include entries that are either applied (normal case) or have a
+  // currentPath set (staging rename started but batch not yet complete).
+  // This covers crash recovery for cycle/swap operations where the file
+  // may have been moved to a temp path while applied is still false.
+  // Skipped entries are NOT excluded here — they may be retried if the
+  // blocking condition (e.g. original-occupied) was resolved by the caller.
   const candidates = [...log.operations]
     .reverse()
-    .filter(entry => entry.applied !== false && entry.status !== 'done');
+    .filter(entry => {
+      if (entry.status === 'done') return false;
+      if (entry.applied !== false) return true;
+      if (entry.currentPath !== undefined) return true;
+      return false;
+    });
 
   const valid: PlannedOperation[] = [];
   for (const entry of candidates) {
-    const from = path.resolve(entry.renamed);
     const to = path.resolve(entry.original);
+
+    // Determine the actual on-disk location of the file:
+    //   1. currentPath – set when a staging rename moved it to a temp path.
+    //   2. renamed     – normal post-operation location (applied: true).
+    const resolvedCurrentPath = entry.currentPath ? path.resolve(entry.currentPath) : null;
+    const resolvedRenamed = path.resolve(entry.renamed);
+
+    let from: string;
+    if (resolvedCurrentPath && fs.existsSync(resolvedCurrentPath)) {
+      // File is at the staging temp path.
+      from = resolvedCurrentPath;
+    } else if (entry.applied !== false && fs.existsSync(resolvedRenamed)) {
+      // File is at its final renamed location (normal case).
+      from = resolvedRenamed;
+    } else if (resolvedCurrentPath && !fs.existsSync(resolvedCurrentPath) && fs.existsSync(to)) {
+      // currentPath was set but the staging rename never executed (crash
+      // before renameSync). File is already at its original location.
+      markEntry(entry, { status: 'done', currentPath: undefined });
+      continue;
+    } else {
+      console.warn(`[undo] File not found at currentPath (${entry.currentPath ?? 'none'}) or renamed location (${entry.renamed}), skipping`);
+      markEntry(entry, { status: 'skipped', lastError: 'renamed-not-found' });
+      continue;
+    }
+
     if (!isSubPath(resolvedFolder, from) || !isSubPath(resolvedFolder, to)) {
       console.warn(`[undo] Skipping entry outside folder: ${from}`);
       markEntry(entry, { status: 'skipped', lastError: 'outside-folder' });
-      continue;
-    }
-    if (!fs.existsSync(from)) {
-      console.warn(`[undo] Renamed file not found, skipping: ${from}`);
-      markEntry(entry, { status: 'skipped', lastError: 'renamed-not-found' });
       continue;
     }
     valid.push({ from, to, original: { from: entry.renamed, to: entry.original } });
