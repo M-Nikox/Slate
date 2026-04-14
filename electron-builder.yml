@@ -17,6 +17,10 @@ files:
 extraMetadata:
   main: out/main/index.js
 
+extraResources:
+  - from: build/icon.png
+    to: icons/icon.png
+
 linux:
   icon: build/icon.png
   target:
@@ -47,10 +51,3 @@ nsis:
   installerIcon: build/icon.ico
   uninstallerIcon: build/icon.ico
   installerHeaderIcon: build/icon.ico
-
-# auto-updates, not ready yet, need to test first:
-# publish:
-#   provider: github
-#   owner: M-Nikox
-#   repo: slate
-#   releaseType: release
