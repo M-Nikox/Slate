@@ -6,7 +6,7 @@ asar: true
 
 directories:
   output: dist
-  buildResources: build
+  buildResources: assets
 
 files:
   - out/**
@@ -18,11 +18,11 @@ extraMetadata:
   main: out/main/index.js
 
 extraResources:
-  - from: build/icon.png
+  - from: assets/icon.png
     to: icons/icon.png
 
 linux:
-  icon: build/icon.png
+  icon: assets/icon.png
   target:
     - target: AppImage
       arch: [x64]
@@ -30,7 +30,7 @@ linux:
       arch: [x64]
 
 mac:
-  icon: build/icon.icns
+  icon: assets/icon.icns
   category: public.app-category.utilities
   target:
     - target: dmg
@@ -39,7 +39,7 @@ mac:
       arch: [arm64, x64]
 
 win:
-  icon: build/icon.ico
+  icon: assets/icon.ico
   target:
     - target: nsis
       arch: [x64]
@@ -48,6 +48,6 @@ win:
 
 nsis:
   artifactName: slate-${version}-win-${arch}-setup.${ext}
-  installerIcon: build/icon.ico
-  uninstallerIcon: build/icon.ico
-  installerHeaderIcon: build/icon.ico
+  installerIcon: assets/icon.ico
+  uninstallerIcon: assets/icon.ico
+  installerHeaderIcon: assets/icon.ico

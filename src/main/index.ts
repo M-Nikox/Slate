@@ -18,17 +18,17 @@ const isDev = !app.isPackaged;
 
 /**
  * Resolve a window icon path that works in both:
- * - dev (running from repo): build/icon.png
+ * - dev (running from repo): assets/icon.png
  * - packaged (running from asar + resources): <resources>/icons/icon.png
  *
- * electron-builder.yml will place build/icon.png at resources/icons/icon.png via extraResources.
+ * electron-builder.yml will place assets/icon.png at resources/icons/icon.png via extraResources.
  */
 function resolveWindowIcon(): string {
   if (app.isPackaged) {
     return path.join(process.resourcesPath, 'icons', 'icon.png');
   }
 
-  return path.join(appRoot, 'build', 'icon.png');
+  return path.join(appRoot, 'assets', 'icon.png');
 }
 
 function createWindow(): void {

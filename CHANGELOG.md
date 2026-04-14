@@ -8,19 +8,19 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0
 
 ### Added
 - Branding assets for desktop packaging:
-  - `build/icon.icns` (macOS)
-  - `build/icon.ico` (Windows)
-  - `build/icon.png` (Linux/general)
+  - `assets/icon.icns` (macOS)
+  - `assets/icon.ico` (Windows)
+  - `assets/icon.png` (Linux/general)
 
 ### Changed
 - Build: configured platform-specific app icons in `electron-builder.yml`:
-  - `mac.icon: build/icon.icns`
-  - `win.icon: build/icon.ico`
-  - `linux.icon: build/icon.png`
+  - `mac.icon: assets/icon.icns`
+  - `win.icon: assets/icon.ico`
+  - `linux.icon: assets/icon.png`
 - Build: configured NSIS installer branding icons:
-  - `installerIcon: build/icon.ico`
-  - `uninstallerIcon: build/icon.ico`
-  - `installerHeaderIcon: build/icon.ico`
+  - `installerIcon: assets/icon.ico`
+  - `uninstallerIcon: assets/icon.ico`
+  - `installerHeaderIcon: assets/icon.ico`
 - Runtime: set `BrowserWindow` icon on non-macOS platforms in `src/main/index.ts` for consistent window/taskbar branding.
 
 ## [0.4.0] - 2026-04-12
