@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses semantic versioning tags for releases.
 
-## [0.4.1] - 2026-04-13
+## [0.4.1] - 2026-04-14
 
 ### Added
 - Branding assets for desktop packaging:
