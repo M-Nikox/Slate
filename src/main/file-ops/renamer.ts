@@ -268,16 +268,24 @@ export function executeRename(folderPath: string, operations: RenameOperation[])
     const to = path.resolve(op.to);
 
     try {
+      // Mark applied *before* the rename so a crash after renameSync but before
+      // the log update doesn't silently drop the entry from undo candidates.
+      // The existing `renamed-not-found` guard in executeUndo handles the
+      // converse case where the rename never ran but the entry is marked applied.
+      if (op.original) {
+        updateUndoEntry(op.original.from, op.original.to, { applied: true });
+      }
       fs.renameSync(from, to);
       if (op.original) {
         succeeded.push(op.original);
-        updateUndoEntry(op.original.from, op.original.to, { applied: true, status: 'pending', lastError: undefined });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return {
         succeeded,
-        failed: { op: { from, to }, error: message },
+        // Report the user-facing operation (op.original) rather than the
+        // internal step, which may be a .slate-tmp-* staging path.
+        failed: { op: op.original ?? { from, to }, error: message },
         issues,
       };
     }
