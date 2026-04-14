@@ -11,34 +11,29 @@ Security fixes are applied to the latest released version of Slate.
 
 ## Reporting a Vulnerability
 
-If you believe you found a real vulnerability, please report it privately first (GitHub Security Advisory preferred).
+If you discover a potential vulnerability, please use **GitHub Private Vulnerability Reporting** for this repository.
 
-For non-sensitive security improvements (hardening, dependency bumps, policy/docs updates), you may open a normal issue or PR and use the `security` label.
-Please include:
+- Please **do not** open public issues or pull requests for unpatched vulnerabilities.
+- Include as much detail as possible:
+  - Description of the issue
+  - Reproduction steps
+  - Affected versions/paths
+  - Impact assessment
+  - Possible fix or mitigation (if known)
 
-- A clear description of the issue
-- Steps to reproduce
-- Potential impact
-- Suggested mitigation (if known)
+## Public Security Improvements
 
-## What to Expect
+For non-sensitive security work (for example: dependency updates, hardening refactors, policy/docs improvements), you can open a normal public issue or pull request and apply the `security` label.
 
-After a report is received:
+## Response Expectations
 
-1. Initial acknowledgment target: **within 72 hours**
-2. Triage and impact assessment
-3. Fix development and validation
-4. Coordinated disclosure in a release note/changelog entry
+After receiving a private report, the maintainer aims to:
 
-## Scope
-
-Please report issues involving:
-
-- Arbitrary file write/rename outside intended folder scope
-- Path traversal or unsafe path handling
-- Privilege boundary or IPC abuse
-- Dependency vulnerabilities with practical impact
+1. Acknowledge receipt within **72 hours**
+2. Triage and validate impact
+3. Prepare and test a fix
+4. Publish a coordinated fix and note it in release/changelog entries
 
 ## Disclosure Policy
 
-Please do **not** publicly disclose vulnerabilities before a fix is available and users have had a reasonable opportunity to update.
+Please avoid public disclosure of vulnerability details until a fix is available and users have had reasonable time to update.
