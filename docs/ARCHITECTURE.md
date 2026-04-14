@@ -91,11 +91,11 @@ If the process crashes between steps, `executeUndo` inspects `currentPath`:
 `checkUndoLog()` now returns a structured `UndoLogCheckResult`:
 
 ```
-{ status: 'ok'; pending: number }   // log valid; pending > 0 means work remains
-{ status: 'no-log' }                // file absent
-{ status: 'invalid'; error }        // JSON parse or schema error
-{ status: 'mismatch'; error }       // folderPath in log ≠ requested folder
-{ status: 'io-error'; error }       // transient read error
+{ status: 'ok'; pending: number }           // log valid; pending > 0 means work remains
+{ status: 'no-log' }                        // file absent
+{ status: 'invalid'; error: string }       // JSON parse or schema error
+{ status: 'mismatch'; error: string }      // folderPath in log ≠ requested folder
+{ status: 'io-error'; error: string }      // transient read error
 ```
 
 `executeUndo` deletes the log **only** when `status === 'ok' && pending === 0`.
