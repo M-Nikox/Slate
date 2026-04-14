@@ -145,4 +145,4 @@ Logo vectors/icons by [Mohira](https://dribbble.com/mohira_artist?ref=svgrepo.co
 
 ---
 
-> Note: GitHub Copilot was used to assist with configuring and interpreting CodeQL results, as well as for pull request review assistance and minor comment suggestions.
+> Note: GitHub Copilot was used to assist with configuring and interpreting CodeQL results, as well as for pull request review assistance and minor comment suggestions. Other GitHub Copilot functions are strictly tested by me in a fully manual manner locally before any changes are committed.
