@@ -5,19 +5,11 @@
 <h1 align="center">Slate</h1>
 <h3 align="center">TV/Anime Bulk Media File Renamer</h3>
 
-<p align="center">
-  <a href="https://github.com/M-Nikox/Slate/actions/workflows/ci.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/M-Nikox/Slate/ci.yml?branch=master&label=build" alt="Build">
-  </a>
-  <a href="https://github.com/M-Nikox/Slate/releases">
-    <img src="https://img.shields.io/github/v/release/M-Nikox/Slate?color=7c3aed" alt="Version">
-  </a>
-  <a href="./LICENSE">
-    <img src="https://img.shields.io/badge/license-GPL--3.0--only-16a34a.svg" alt="License: GPL-3.0">
-  </a>
-  <a href="https://github.com/M-Nikox/Slate/releases">
-    <img src="https://img.shields.io/badge/downloads-releases-0ea5e9" alt="Downloads">
-  </a>
+<p align="center" style="text-decoration:none;">
+  <a href="https://github.com/M-Nikox/Slate/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/M-Nikox/Slate/ci.yml?branch=master&label=build" alt="Build"></a>
+  <a href="https://github.com/M-Nikox/Slate/releases"><img src="https://img.shields.io/github/v/release/M-Nikox/Slate?color=7c3aed" alt="Version"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--only-16a34a.svg" alt="License: GPL-3.0"></a>
+  <a href="https://github.com/M-Nikox/Slate/releases"><img src="https://img.shields.io/badge/downloads-releases-0ea5e9" alt="Downloads"></a>
 </p>
 
 ---
