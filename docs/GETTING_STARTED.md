@@ -50,6 +50,8 @@ Use Manual Mode when filenames are inconsistent or parsing is ambiguous.
 
 In Manual Mode, episode numbering is sequential by the current row order.
 
+When Manual Mode is enabled, parser output is not used for naming.
+
 ## Inline Row Editing
 
 You can override parser output per row:
