@@ -109,8 +109,11 @@ export function registerHandlers(): void {
       return { exists: false, count: 0 };
     }
     const resolved = path.resolve(folderPath);
-    const count = checkUndoLog(resolved);
-    return { exists: count > 0, count };
+    const result = checkUndoLog(resolved);
+    if (result.status === 'ok') {
+      return { exists: result.pending > 0, count: result.pending };
+    }
+    return { exists: false, count: 0 };
   });
 
   ipcMain.handle(IPC.EXECUTE_UNDO, (_event, folderPath: unknown) => {

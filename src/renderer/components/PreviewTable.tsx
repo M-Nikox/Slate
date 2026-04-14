@@ -48,7 +48,9 @@ function TableRow({
   const editRowRef = useRef<HTMLSpanElement>(null);
 
   const isLowConfidence = row.parsed && row.confidence === 'low';
-  const editable = !manualMode && row.parsed && row.effectiveShowName !== null;
+  const isBlocked = row.safety === 'blocked';
+  const isWarning = row.safety === 'warning';
+  const editable = !manualMode && row.parsed && !isBlocked && row.effectiveShowName !== null;
 
   function openEditor() {
     if (!editable) return;
@@ -99,7 +101,7 @@ function TableRow({
       style={{
         borderBottom: isDragOver ? '2px solid #4a9e5c' : '1px solid #141414',
         background: rowBackground(),
-        opacity: row.parsed ? 1 : 0.35,
+        opacity: row.parsed && !isBlocked ? 1 : 0.45,
         transition: 'background 0.1s',
       }}
       draggable={manualMode}
@@ -116,7 +118,7 @@ function TableRow({
         </td>
       )}
       <td style={styles.tdCheck}>
-        {row.parsed && (
+        {row.parsed && !isBlocked && (
           <input
             type="checkbox"
             checked={isSelected}
@@ -132,7 +134,7 @@ function TableRow({
       <td style={{ ...styles.td, ...styles.arrow }}>→</td>
       <td style={{ ...styles.td, ...styles.proposedCell }}>
         {!row.parsed ? (
-          <span style={styles.unparsed}>Could not parse</span>
+          <span style={styles.unparsed} title={row.reasons.join('\n')}>{row.reasons[0] ?? 'Could not parse'}</span>
         ) : editing ? (
           <span ref={editRowRef} style={styles.editRow} onBlur={handleEditRowBlur}>
             <input
@@ -172,7 +174,17 @@ function TableRow({
             <span style={{ color: isLowConfidence ? '#c8a84b' : row.overridden ? '#8fb3ff' : '#b8dbbe' }}>
               {row.proposedName}
             </span>
-            {isLowConfidence && (
+            {isBlocked && (
+              <span style={styles.blockedBadge} title={row.reasons.join('\n')}>
+                ⛔ blocked
+              </span>
+            )}
+            {isWarning && (
+              <span style={styles.warningBadge} title={row.reasons.join('\n')}>
+                ⚠ warning
+              </span>
+            )}
+            {isLowConfidence && !isBlocked && (
               <span style={styles.lowConfidenceBadge}>⚠ low confidence</span>
             )}
             {row.overridden && (
@@ -197,8 +209,9 @@ export default function PreviewTable({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const parsedRows = rows.filter(r => r.parsed);
-  const allSelected = parsedRows.length > 0 && parsedRows.every(r => selected.has(r.file.path));
-  const someSelected = parsedRows.some(r => selected.has(r.file.path));
+  const selectableRows = parsedRows.filter(r => r.safety !== 'blocked');
+  const allSelected = selectableRows.length > 0 && selectableRows.every(r => selected.has(r.file.path));
+  const someSelected = selectableRows.some(r => selected.has(r.file.path));
 
   function handleDragStart(e: React.DragEvent, index: number) {
     const target = e.target as HTMLElement;
@@ -310,6 +323,16 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '10px', color: '#8a6a1a', background: '#2a2008',
     border: '1px solid #3d3010', borderRadius: '3px', padding: '1px 5px',
     whiteSpace: 'nowrap', flexShrink: 0, cursor: 'default',
+  },
+  warningBadge: {
+    fontSize: '10px', color: '#8a6a1a', background: '#2a2008',
+    border: '1px solid #3d3010', borderRadius: '3px', padding: '1px 5px',
+    whiteSpace: 'nowrap', flexShrink: 0, cursor: 'help',
+  },
+  blockedBadge: {
+    fontSize: '10px', color: '#c06a6a', background: '#2a1010',
+    border: '1px solid #4d1e1e', borderRadius: '3px', padding: '1px 5px',
+    whiteSpace: 'nowrap', flexShrink: 0, cursor: 'help',
   },
   overriddenBadge: {
     fontSize: '10px', color: '#5a7ab0', background: '#0d1a2a',

@@ -39,11 +39,13 @@ export default function App() {
   const isBusy = isRenaming || isUndoing || isCheckingUpdates;
   const selectedCount = selected.size;
 
-  let parsedCount = 0, overriddenCount = 0, lowConfCount = 0;
+  let parsedCount = 0, overriddenCount = 0, lowConfCount = 0, blockedCount = 0, warningCount = 0;
   for (const r of rows) {
     if (r.parsed) parsedCount++;
     if (r.overridden) overriddenCount++;
     if (r.parsed && r.confidence === 'low') lowConfCount++;
+    if (r.safety === 'blocked') blockedCount++;
+    if (r.safety === 'warning') warningCount++;
   }
 
   useEffect(() => {
@@ -91,7 +93,7 @@ export default function App() {
     if (!folderPath || selected.size === 0) return;
 
     const operations: RenameOperation[] = rows
-      .filter(r => r.parsed && r.proposedName && selected.has(r.file.path))
+      .filter(r => r.parsed && r.safety !== 'blocked' && r.proposedName && selected.has(r.file.path))
       .map(r => ({
         from: r.file.path,
         to: r.file.path.replace(r.file.name, r.proposedName!),
@@ -102,7 +104,12 @@ export default function App() {
 
     try {
       const result = await bridge.renameFiles(folderPath, operations);
-      if (result.failed) {
+      if (result.issues && result.issues.some(issue => issue.severity === 'blocked')) {
+        setStatus({
+          type: 'error',
+          message: result.issues.find(issue => issue.severity === 'blocked')?.message ?? 'Rename blocked by safety checks.',
+        });
+      } else if (result.failed) {
         setStatus({
           type: 'error',
           message: `Stopped at "${result.failed.op.from.split(/[\\/]/).pop()}": ${result.failed.error}. ${result.succeeded.length} file(s) renamed and can be undone.`,
@@ -130,7 +137,7 @@ export default function App() {
 
       if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
         e.preventDefault();
-        setSelected(new Set(rows.filter(r => r.parsed).map(r => r.file.path)));
+        setSelected(new Set(rows.filter(r => r.parsed && r.safety !== 'blocked').map(r => r.file.path)));
         return;
       }
 
@@ -164,7 +171,7 @@ export default function App() {
 
   const handleToggleAll = useCallback((checked: boolean) => {
     if (checked) {
-      setSelected(new Set(rows.filter(r => r.parsed).map(r => r.file.path)));
+      setSelected(new Set(rows.filter(r => r.parsed && r.safety !== 'blocked').map(r => r.file.path)));
     } else {
       setSelected(new Set());
     }
@@ -183,7 +190,7 @@ export default function App() {
   }, []);
 
   const handleSelectLowConfidence = useCallback(() => {
-    setSelected(new Set(rows.filter(r => r.parsed && r.confidence === 'low').map(r => r.file.path)));
+    setSelected(new Set(rows.filter(r => r.parsed && r.confidence === 'low' && r.safety !== 'blocked').map(r => r.file.path)));
   }, [rows]);
 
   const handleReorder = useCallback((fromIndex: number, toIndex: number) => {
@@ -195,12 +202,34 @@ export default function App() {
     });
   }, []);
 
+  useEffect(() => {
+    setRowOverrides(prev => {
+      const validPaths = new Set(files.map(f => f.path));
+      const next = new Map<string, RowOverride>();
+      for (const [filePath, override] of prev) {
+        if (validPaths.has(filePath)) next.set(filePath, override);
+      }
+      return next.size === prev.size ? prev : next;
+    });
+  }, [files]);
+
+  useEffect(() => {
+    setSelected(prev => {
+      const selectable = new Set(rows.filter(r => r.parsed && r.safety !== 'blocked').map(r => r.file.path));
+      const next = new Set<string>();
+      for (const value of prev) {
+        if (selectable.has(value)) next.add(value);
+      }
+      return next.size === prev.size ? prev : next;
+    });
+  }, [rows]);
+
   async function handleUndo() {
     if (!folderPath) return;
     setStatus({ type: 'undoing' });
     try {
       await bridge.executeUndo(folderPath);
-      setUndoCount(0);
+      await checkForUndo(folderPath);
       setStatus({ type: 'idle' });
       const scanned = await bridge.scanFolder(folderPath);
       setFiles(scanned);
@@ -353,6 +382,8 @@ export default function App() {
           <span style={styles.footerMeta}>
             {parsedCount} file{parsedCount !== 1 ? 's' : ''} recognised
             {overriddenCount > 0 ? ` · ${overriddenCount} edited` : ''}
+            {warningCount > 0 ? ` · ${warningCount} warning${warningCount !== 1 ? 's' : ''}` : ''}
+            {blockedCount > 0 ? ` · ${blockedCount} blocked` : ''}
             {rows.length !== parsedCount ? ` · ${rows.length - parsedCount} skipped` : ''}
           </span>
           <div style={styles.footerActions}>

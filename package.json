@@ -1,6 +1,6 @@
 {
   "name": "slate",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "A free, open-source media file renamer for TV shows and anime.",
   "type": "module",
   "main": "out/main/index.js",

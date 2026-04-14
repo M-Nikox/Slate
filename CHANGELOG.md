@@ -4,6 +4,56 @@ All notable changes to this project are documented in this file.
 
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses semantic versioning tags for releases.
 
+## [0.5.0] - 2026-04-14
+
+### Added
+- Parser: support for bare `E###` episode tokens (for example, `One Piece E198.mkv`) with season defaulting to `1` when no explicit season token is present.
+- Parser: support for standalone trailing season tokens with `Ep`/`Episode` and bare `E###` forms (for example, `S20 E198`, `Season 20 Ep 198`).
+- Rename safety: explicit destination filename policy validation before mutation (invalid characters, reserved Windows names, trailing dot/space, basename/path length constraints).
+- Main-process rename reporting: structured preflight issues (`warning` vs `blocked`) surfaced through rename results.
+- Undo durability metadata in undo entries (`applied`, `status`, `lastError`) to support retryable partial undo flows.
+- Architecture docs: new Safety + Determinism contract section describing parsing determinism, preview determinism, corruption blocking, and durable undo expectations.
+
+### Changed
+- Rename planning now preflights the full operation set and executes a deterministic plan that safely handles swaps/cycles via temporary staging operations.
+- Rename preflight now blocks duplicate sources, duplicate destinations, invalid operations, and destination collisions before any filesystem mutation.
+- Undo execution now tracks and persists per-entry outcomes (`done`/`pending`/`skipped`) and only clears the undo log when no pending entries remain.
+- Parser safety flow hardened with additional structural guards:
+  - unicode whitespace normalization before parsing
+  - explicit rejection of `season 0` / `episode 0` in explicit season/episode patterns
+  - explicit ambiguity flags/warnings on low-confidence ambiguous parses
+- UI preview polish:
+  - unparsed rows now expose full reason lists via tooltip title text
+  - episode override application path renamed/refined to apply only valid override values
+
+### Fixed
+- Build/dev: resolved TypeScript `TS2688` type lookup failure by removing the explicit `electron` ambient type entry from `tsconfig.main.json` (`tsconfig.main.json` now uses `types: ["node"]`).
+- Prevented unsafe partial rename behavior by blocking non-resolvable conflicts during preflight instead of failing mid-run.
+- Improved undo reliability for partial/conflicted scenarios by retaining recoverable undo logs for later retry instead of dropping recoverable state.
+
+### Tests
+- Added `tests/main/renamer.test.ts` coverage for:
+  - duplicate-destination preflight blocking before mutation
+  - deterministic swap-cycle handling with full undo
+  - durable undo retry behavior when first undo attempt is blocked
+- Added `tests/main/scanner.test.ts` to verify deterministic scan ordering.
+- Added parser determinism/safety tests for unicode whitespace normalization, invalid season/episode rejection, and explicit ambiguous low-confidence warning signaling.
+
+### Extra Fixes
+Staging Durability:
+- Add currentPath? to UndoEntry to track staging temp location
+- Add stagingFor? to PlannedOperation to link staging steps to owning op
+- executeRename: write currentPath before staging rename; clear after final
+- executeUndo: include currentPath entries in candidates; use currentPath
+  as file source when it exists (enables crash recovery from any step)
+
+Safe Log Deletion:
+- checkUndoLog now returns UndoLogCheckResult discriminated union:
+  no-log | ok(pending) | invalid | mismatch | io-error
+- executeUndo deletes log only when status===ok && pending===0
+- Parse/schema/mismatch errors preserve log and surface console.error
+- handlers.ts updated to consume structured result
+
 ## [0.4.1] - 2026-04-14
 
 ### Added
