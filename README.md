@@ -77,4 +77,9 @@ Then open a folder, review previews, and rename selected files.
 - [FAQ](./docs/FAQ.md)
 - [Changelog](./CHANGELOG.md)
 
+## Attribution
+Logo vectors/icons by [Mohira](https://dribbble.com/mohira_artist?ref=svgrepo.com) (PD License), via [SVG Repo](https://www.svgrepo.com/).
+
+---
+
 > Note: GitHub Copilot was used to assist with configuring and interpreting CodeQL results, as well as for pull request review assistance and minor comment suggestions.
