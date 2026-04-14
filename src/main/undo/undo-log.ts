@@ -12,16 +12,53 @@ export function undoLogExists(folderPath: string): boolean {
   return fs.existsSync(undoLogPath(folderPath));
 }
 
-export function checkUndoLog(folderPath: string): number {
+/**
+ * Structured result from inspecting an undo log.
+ *
+ * - `no-log`   – file does not exist (safe to treat as empty)
+ * - `ok`       – log parsed and validated; `pending` is the count of entries
+ *                that still need to be undone. Delete the log ONLY when
+ *                `status === 'ok' && pending === 0`.
+ * - `invalid`  – JSON parse error or schema validation failure; log is
+ *                potentially corrupted but should NOT be deleted.
+ * - `mismatch` – folder-path mismatch; log belongs to a different folder and
+ *                should NOT be deleted.
+ * - `io-error` – transient read error; log should NOT be deleted.
+ */
+export type UndoLogCheckResult =
+  | { status: 'ok'; pending: number }
+  | { status: 'no-log' }
+  | { status: 'invalid'; error: string }
+  | { status: 'mismatch'; error: string }
+  | { status: 'io-error'; error: string };
+
+export function checkUndoLog(folderPath: string): UndoLogCheckResult {
   const logPath = undoLogPath(folderPath);
-  if (!fs.existsSync(logPath)) return 0;
+  if (!fs.existsSync(logPath)) return { status: 'no-log' };
+
+  let raw: string;
+  try {
+    raw = fs.readFileSync(logPath, 'utf-8');
+  } catch (e) {
+    return { status: 'io-error', error: e instanceof Error ? e.message : String(e) };
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    return { status: 'invalid', error: `JSON parse error: ${e instanceof Error ? e.message : String(e)}` };
+  }
 
   try {
-    const raw = fs.readFileSync(logPath, 'utf-8');
-    const log = normalizeUndoLog(JSON.parse(raw), folderPath);
-    return log.operations.filter(isPendingUndo).length;
-  } catch {
-    return 0;
+    const log = normalizeUndoLog(parsed, folderPath);
+    return { status: 'ok', pending: log.operations.filter(isPendingUndo).length };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.toLowerCase().includes('mismatch')) {
+      return { status: 'mismatch', error: msg };
+    }
+    return { status: 'invalid', error: msg };
   }
 }
 
@@ -53,8 +90,8 @@ function isObject(value: unknown): value is Record<string, unknown> {
 }
 
 function isPendingUndo(entry: UndoEntry): boolean {
-  if (entry.applied === false) return false;
-  return entry.status !== 'done';
+  if (entry.applied !== false || entry.currentPath !== undefined) return entry.status !== 'done';
+  return false;
 }
 
 export function countPendingUndoEntries(folderPath: string): number {
@@ -92,6 +129,7 @@ function normalizeUndoLog(raw: unknown, expectedFolderPath: string): UndoLog {
         ? entry.status as UndoEntry['status']
         : 'pending',
       lastError: typeof entry.lastError === 'string' ? entry.lastError : undefined,
+      currentPath: typeof entry.currentPath === 'string' ? entry.currentPath : undefined,
     };
   });
 

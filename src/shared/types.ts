@@ -38,6 +38,14 @@ export interface UndoEntry {
   applied?: boolean;
   status?: 'pending' | 'done' | 'skipped';
   lastError?: string;
+  /**
+   * Set when a cycle/swap staging rename moves the file to a temporary path
+   * (e.g. `.slate-tmp-*`) before the final rename step completes. Tracks the
+   * actual on-disk location of the file during an in-progress batch so that
+   * crash recovery can locate and restore it even when `applied` is still
+   * false. Cleared once the final rename for this entry succeeds.
+   */
+  currentPath?: string;
 }
 
 export interface UndoLog {
