@@ -4,6 +4,25 @@ All notable changes to this project are documented in this file.
 
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses semantic versioning tags for releases.
 
+## [0.4.1] - 2026-04-13
+
+### Added
+- Branding assets for desktop packaging:
+  - `assets/icon.icns` (macOS)
+  - `assets/icon.ico` (Windows)
+  - `assets/icon.png` (Linux/general)
+
+### Changed
+- Build: configured platform-specific app icons in `electron-builder.yml`:
+  - `mac.icon: assets/icon.icns`
+  - `win.icon: assets/icon.ico`
+  - `linux.icon: assets/icon.png`
+- Build: configured NSIS installer branding icons:
+  - `installerIcon: assets/icon.ico`
+  - `uninstallerIcon: assets/icon.ico`
+  - `installerHeaderIcon: assets/icon.ico`
+- Runtime: set `BrowserWindow` icon on non-macOS platforms in `src/main/index.ts` for consistent window/taskbar branding.
+
 ## [0.4.0] - 2026-04-12
 
 ### Added
