@@ -328,6 +328,16 @@ export function executeUndo(folderPath: string): number {
     return 0;
   }
 
+  // Keep later deletion checks in this function consistent with the
+  // structured validation above. Returning 0 from the imported helper is
+  // ambiguous because it may also represent a read/parse failure; for any
+  // non-ok status we return a non-zero value so corrupted/unreadable logs
+  // are preserved for manual recovery.
+  const countPendingUndoEntries = (): number => {
+    const result = checkUndoLog(resolvedFolder);
+    return result.status === 'ok' ? result.pending : 1;
+  };
+
   const log = readUndoLog(resolvedFolder);
 
   const caseInsensitive = process.platform === 'win32' || process.platform === 'darwin';
