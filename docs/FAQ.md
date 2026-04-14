@@ -1,45 +1,37 @@
 # FAQ
 
-## Why are some files skipped?
+## What does “low confidence” mean?
 
-Slate only scans supported media extensions:
+Low confidence means Slate found a potentially valid parse, but the pattern is ambiguous compared to strongly structured formats like `S01E02`. You should review these rows before renaming.
 
-`.mkv`, `.mp4`, `.avi`, `.mov`, `.m4v`, `.wmv`, `.flv`, `.webm`.
+## When should I use Manual Mode?
 
-## Why wasn’t a filename parsed?
+Use Manual Mode when:
+- Source filenames are inconsistent
+- You want strict sequential numbering
+- You prefer explicit show/season/start-episode control
 
-Some filenames do not match current parser patterns (for example missing season/episode signals or unusual naming conventions).
+## Can I reorder files before assigning episode numbers?
 
-## Can I undo a rename?
+Yes. In Manual Mode, drag rows to reorder before rename. Sequence assignment follows the current row order.
 
-Yes. Slate writes a `.slate-undo.json` file in the folder before renaming. If present, use the **Undo** action in the app.
+## Can I edit parser output per file?
 
-## Why can’t I select any folder path over IPC?
+Yes. Click a proposed row to edit show name and episode. Edited rows are marked and can be reverted.
 
-Main-process handlers validate that paths are:
+## Is renaming reversible?
 
-- non-empty strings
-- absolute paths
-- existing directories
+Yes. Slate records the last batch in `.slate-undo.json` (per folder). Use Undo to revert the most recent batch.
 
-This is intentional for safety.
+## What filename patterns are supported?
 
-## `npm run test` fails with `vitest: not found`
+Slate supports common TV/anime patterns including:
+- `S01E02`
+- `1x02`
+- `Season 1 Episode 2`
+- `Episode 2` / `Ep 2`
+- long episode values (e.g., `E198`)
 
-Install dependencies first:
+## Why are some files not parsed?
 
-```bash
-npm ci
-```
-
-Then run:
-
-```bash
-npm run test
-```
-
-## Why does packaging fail in headless Linux environments?
-
-Electron packaging/runtime may require desktop/Chromium sandbox capabilities that are limited in some headless environments.
-
-💡 Use a local desktop environment for final packaging verification when needed.
+Some release names are highly irregular or missing episode signals. Use Manual Mode or inline edits for those rows.
