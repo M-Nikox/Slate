@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseFilename } from '../../src/shared/parser/parse-filename.js';
-import { buildName } from '../../src/shared/parser/build-name.js';
+import { buildName, applyTemplate, DEFAULT_TEMPLATE } from '../../src/shared/parser/build-name.js';
 
 // ---------------------------------------------------------------------------
 // parseFilename
@@ -395,5 +395,54 @@ describe('buildName — episode padding', () => {
   it('uses 3-digit padding for episodes above 99', () => {
     const r = parseFilename('One.Piece.S01E198.mkv')!;
     expect(buildName(r)).toBe('One Piece - S01E198.mkv');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// applyTemplate
+// ---------------------------------------------------------------------------
+
+describe('applyTemplate', () => {
+  const base = parseFilename('Breaking.Bad.S03E07.mkv')!;
+
+  it('default template matches buildName output', () => {
+    expect(applyTemplate(base, DEFAULT_TEMPLATE)).toBe(buildName(base));
+  });
+
+  it('{Show} inserts show name', () => {
+    expect(applyTemplate(base, '{Show}')).toBe('Breaking Bad.mkv');
+  });
+
+  it('{Season} and {SeasonZ} pad correctly', () => {
+    expect(applyTemplate(base, '{Season}-{SeasonZ}')).toBe('3-03.mkv');
+  });
+
+  it('{Episode} and {EpisodeZ} pad correctly', () => {
+    expect(applyTemplate(base, '{Episode}-{EpisodeZ}')).toBe('7-07.mkv');
+  });
+
+  it('{EpisodeZ} expands to range for double episodes', () => {
+    const r = parseFilename('Arcane.S01E01E02.mkv')!;
+    expect(applyTemplate(r, 'S{SeasonZ}E{EpisodeZ}')).toBe('S01E01-E02.mkv');
+  });
+
+  it('{OriginalName} inserts base filename', () => {
+    expect(applyTemplate(base, '{OriginalName}', 'Breaking.Bad.S03E07.mkv')).toBe('Breaking.Bad.S03E07.mkv');
+  });
+
+  it('{EpisodeTitle} inserts provided title', () => {
+    expect(applyTemplate(base, '{Show} - {EpisodeTitle}', undefined, 'One Minute')).toBe('Breaking Bad - One Minute.mkv');
+  });
+
+  it('{EpisodeTitle} is empty string when not provided', () => {
+    expect(applyTemplate(base, '{Show} - {EpisodeTitle}')).toBe('Breaking Bad - .mkv');
+  });
+
+  it('extension is always appended', () => {
+    expect(applyTemplate(base, '{Show}').endsWith('.mkv')).toBe(true);
+  });
+
+  it('custom plex-style template', () => {
+    expect(applyTemplate(base, '{Show} S{SeasonZ}E{EpisodeZ}')).toBe('Breaking Bad S03E07.mkv');
   });
 });
