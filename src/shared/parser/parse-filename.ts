@@ -132,7 +132,7 @@ function parseWithPattern(base: string, ext: string, pattern: EpisodePattern): P
   if (
     pattern.warnOnTrailingEpisodeMarker &&
     (
-      /^\s*(?:[._-]+|\s+)+(?:[Ee](?:p(?:isode)?)?\s*)?\d{1,3}\b/i.test(remaining) ||
+      /^\s*[._\-\s]+(?:[Ee](?:p(?:isode)?)?\s*)?\d{1,3}\b/i.test(remaining) ||
       /^\s*[Ee](?:p(?:isode)?)?\s*\d{1,3}\b/i.test(remaining)
     )
   ) {

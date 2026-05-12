@@ -72,6 +72,11 @@ function pathKey(p: string, caseInsensitive: boolean): string {
   return caseInsensitive ? p.toLowerCase() : p;
 }
 
+function isPendingUndoEntry(entry: UndoEntry): boolean {
+  if (entry.applied !== false || entry.currentPath !== undefined) return entry.status !== 'done';
+  return false;
+}
+
 function makeTempPath(folderPath: string, preferredSeed: string, occupiedKeys: Set<string>, caseInsensitive: boolean): string {
   const rawBase = path.basename(preferredSeed);
   const safeBase = rawBase.length > 80 ? rawBase.slice(0, 80) : rawBase;
@@ -451,10 +456,7 @@ export function executeUndo(folderPath: string): number {
     }
   }
 
-  const pending = undoState.operations.filter(entry => {
-    if (entry.applied !== false || entry.currentPath !== undefined) return entry.status !== 'done';
-    return false;
-  }).length;
+  const pending = undoState.operations.filter(isPendingUndoEntry).length;
   if (pending === 0) {
     deleteUndoLog(resolvedFolder);
   }
