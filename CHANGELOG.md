@@ -7,24 +7,48 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0
 ## [0.6.0] - 2026-05-13
 
 ### Added
-- Parser: low-confidence support for anime-special episode markers (`OVA`, `ONA`, `SP`, `Special`) and Japanese episode marker format (`第NN話` / `第NN话`).
-- Parser: warning signal for trailing unmatched episode markers after parsed episode tokens/ranges.
+
+**Template Mode — custom output filename format**
+- New "Template mode" toggle in the toolbar activates the `TemplateEditor` panel, letting you define exactly how renamed files are formatted.
+- Type a format string using any combination of the available tokens; the result is previewed live against the first parsed file as you type.
+- Click-to-insert token chips make it easy to build a template without typing tokens by hand. Available tokens:
+  - `{Show}` — detected or overridden show name
+  - `{Season}` — season number (no padding, e.g. `1`)
+  - `{SeasonZ}` — season number, 2-digit padded (e.g. `01`)
+  - `{Episode}` — episode number (no padding)
+  - `{EpisodeZ}` — episode number, padded to 2 or 3 digits; expands to a range for double episodes (e.g. `E01-E02`)
+  - `{EpisodeTitle}` — episode title when provided
+  - `{OriginalName}` — original filename without extension
+- A `✕` reset button appears when the template has been changed, reverting to the default (`{Show} - S{SeasonZ}E{EpisodeZ}`).
+- Template applies in both auto mode and manual mode, so manual-mode rows can also use custom formats.
+- The default template produces the same output as previous releases — no behaviour change unless Template mode is enabled.
+
+**Parser additions**
+- New low-confidence patterns for anime file naming conventions:
+  - Anime specials: `OVA 01`, `ONA 03`, `SP 2`, `Special 4` (season defaults to `1`).
+  - Japanese episode markers: `第07話` / `第07话` (season defaults to `1`).
+- `trailing-episode-marker` warning: when a high-confidence pattern matches but additional episode-like tokens are detected in the remainder of the filename, a structured warning is surfaced in the UI tooltip so the result can be reviewed before renaming.
+
+**Scanner**
+- Hidden files (filenames starting with `.`) are now excluded from scan results.
 
 ### Changed
-- Parser: compact `NNN` pattern matching now requires clear separators/boundaries to reduce false positives from codec/year metadata.
-- Template rendering: token replacement now uses a single-pass token map, preventing recursive re-expansion from substituted values.
-- Scanner: hidden files are now excluded from media scan results.
-- Undo durability: undo log updates now use indexed in-memory entry updates before atomic writes to reduce repeated read/scan overhead.
+
+- `build-name.ts`: `applyTemplate()` replaces all tokens in a single regex pass, preventing a show name that happens to contain a token literal (e.g. `{Show}`) from being re-expanded after substitution. `buildName()` is now a thin wrapper around `applyTemplate()` using the default template.
+- `usePreviews`: accepts a new `template: string` argument. All preview rows — in auto mode and manual mode — are computed via `applyTemplate` rather than the old `buildName` call, so the live preview always reflects the active template.
+- Parser: NNN compact format now requires an explicit word boundary or separator (`^`, space, `.`, `_`, `-`) on both sides of the three-digit token. This eliminates false positives from codec tags (e.g. `h264`, `x265`) and four-digit year values that previously matched in some filenames.
+- Undo execution: undo log entry updates now use an indexed map (`undoIndexes`) for O(1) in-place patching of individual entries before writing, replacing the previous linear scan on each update step.
+- Undo semantics: `isPendingUndoEntry` now treats any entry with a `currentPath` set (staging temp path written) as a pending undo candidate, even when `applied` is still `false`. This covers crash-recovery for cycle/swap operations where the staging rename completed but the final rename did not.
 
 ### Fixed
-- Rename safety: renderer destination path construction now targets the filename segment safely instead of broad string replacement.
-- Rename safety: main-process preflight now blocks cross-directory destination paths so rename operations remain same-directory.
-- Parser: improved handling/warnings for multi-episode edge cases with extra trailing episode tokens.
+
+- Rename safety: `validateOperation` now explicitly checks that `path.dirname(source) === path.dirname(destination)`. Any operation that would move a file out of its containing directory is blocked at preflight and surfaced as a `blocked` issue.
+- Rename safety: source files are now inspected via `lstatSync` instead of `statSync`, and symbolic link sources are explicitly rejected. This prevents symlink traversal during rename operations.
 
 ### Tests
-- Added parser coverage for anime-special markers, Japanese episode markers, compact-number false-positive guards, and trailing-marker warnings.
-- Added rename preflight coverage for blocked cross-directory destination operations.
-- Updated scanner test coverage to verify hidden files are excluded from scan output.
+- Added parser tests for anime-special markers (`OVA`, `ONA`, `SP`, `Special`), Japanese episode markers, NNN compact boundary guards, and `trailing-episode-marker` warnings.
+- Added rename preflight test for cross-directory destination blocking.
+- Updated scanner test to assert that hidden files (`.dot-files`) are absent from scan output.
 
 ## [0.5.0] - 2026-04-14
 
