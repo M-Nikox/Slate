@@ -34,6 +34,13 @@ export default function App() {
 
   const loadRequestIdRef = useRef(0);
 
+  const buildDestinationPath = (filePath: string, fileName: string, proposedName: string): string => {
+    if (filePath.endsWith(fileName)) {
+      return `${filePath.slice(0, -fileName.length)}${proposedName}`;
+    }
+    return filePath.replace(/[^\\/]*$/, proposedName);
+  };
+
   const rows = usePreviews(files, overrideName, manualMode, manualConfig, rowOverrides, template);
   const detectedName = rows.find(r => r.parsed)?.proposedName?.split(' - ')[0] ?? '';
   const templatePreview = rows.find(r => r.parsed)?.proposedName ?? null;
@@ -101,7 +108,7 @@ export default function App() {
       .filter(r => r.parsed && r.safety !== 'blocked' && r.proposedName && selected.has(r.file.path))
       .map(r => ({
         from: r.file.path,
-        to: r.file.path.replace(r.file.name, r.proposedName!),
+        to: buildDestinationPath(r.file.path, r.file.name, r.proposedName!),
       }));
 
     if (operations.length === 0) return;

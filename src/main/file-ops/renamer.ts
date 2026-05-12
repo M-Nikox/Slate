@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import type { RenameIssue, RenameOperation, RenameResult, UndoEntry, UndoLog } from '../../shared/types.js';
-import { writeUndoLog, readUndoLog, deleteUndoLog, checkUndoLog, countPendingUndoEntries } from '../undo/undo-log.js';
+import { writeUndoLog, readUndoLog, deleteUndoLog, checkUndoLog } from '../undo/undo-log.js';
 import { validateDestinationName } from './name-policy.js';
 
 function isSubPath(parent: string, child: string): boolean {
@@ -24,6 +24,10 @@ function validateOperation(op: RenameOperation, folderPath: string): string | nu
 
   if (!isSubPath(resolvedFolder, resolvedTo)) {
     return `Destination is outside the target folder: ${resolvedTo}`;
+  }
+
+  if (path.dirname(resolvedFrom) !== path.dirname(resolvedTo)) {
+    return 'Destination must remain in the same directory as source';
   }
 
   // 1. Existence check (redundant with lstatSync below, but kept for early exit)
@@ -66,6 +70,13 @@ interface PlannedOperation {
 
 function pathKey(p: string, caseInsensitive: boolean): string {
   return caseInsensitive ? p.toLowerCase() : p;
+}
+
+function isPendingUndoEntry(entry: UndoEntry): boolean {
+  // Pending undo entries are those that were applied (normal case) or staged
+  // to a temp currentPath during a cycle/swap. Entries never applied and not
+  // staged are not undo candidates.
+  return entry.status !== 'done' && (entry.applied !== false || entry.currentPath !== undefined);
 }
 
 function makeTempPath(folderPath: string, preferredSeed: string, occupiedKeys: Set<string>, caseInsensitive: boolean): string {
@@ -260,15 +271,21 @@ export function executeRename(folderPath: string, operations: RenameOperation[])
   writeUndoLog(log);
 
   const succeeded: RenameOperation[] = [];
+  const undoState: UndoLog = {
+    ...log,
+    operations: log.operations.map(entry => ({ ...entry })),
+  };
+  const undoIndexes = new Map<string, number>();
+  for (let i = 0; i < undoState.operations.length; i++) {
+    const entry = undoState.operations[i];
+    undoIndexes.set(`${path.resolve(entry.original)}\u0000${path.resolve(entry.renamed)}`, i);
+  }
   const updateUndoEntry = (from: string, to: string, patch: Partial<UndoEntry>) => {
-    const current = readUndoLog(resolvedFolder);
-    const nextOps = current.operations.map(entry => {
-      if (path.resolve(entry.original) === from && path.resolve(entry.renamed) === to) {
-        return { ...entry, ...patch };
-      }
-      return entry;
-    });
-    writeUndoLog({ ...current, operations: nextOps });
+    const key = `${path.resolve(from)}\u0000${path.resolve(to)}`;
+    const index = undoIndexes.get(key);
+    if (index === undefined) return;
+    undoState.operations[index] = { ...undoState.operations[index], ...patch };
+    writeUndoLog(undoState);
   };
 
   for (const op of plan) {
@@ -339,18 +356,23 @@ export function executeUndo(folderPath: string): number {
   };
 
   const log = readUndoLog(resolvedFolder);
+  const undoState: UndoLog = {
+    ...log,
+    operations: log.operations.map(entry => ({ ...entry })),
+  };
+  const undoIndexes = new Map<string, number>();
+  for (let i = 0; i < undoState.operations.length; i++) {
+    const entry = undoState.operations[i];
+    undoIndexes.set(`${path.resolve(entry.original)}\u0000${path.resolve(entry.renamed)}`, i);
+  }
 
   const caseInsensitive = process.platform === 'win32' || process.platform === 'darwin';
   const markEntry = (entry: UndoEntry, patch: Partial<UndoEntry>) => {
-    const current = readUndoLog(resolvedFolder);
-    writeUndoLog({
-      ...current,
-      operations: current.operations.map(op => (
-        path.resolve(op.original) === path.resolve(entry.original) && path.resolve(op.renamed) === path.resolve(entry.renamed)
-        ? { ...op, ...patch }
-        : op
-      )),
-    });
+    const key = `${path.resolve(entry.original)}\u0000${path.resolve(entry.renamed)}`;
+    const index = undoIndexes.get(key);
+    if (index === undefined) return;
+    undoState.operations[index] = { ...undoState.operations[index], ...patch };
+    writeUndoLog(undoState);
   };
 
   // Include entries that are either applied (normal case) or have a
@@ -359,7 +381,7 @@ export function executeUndo(folderPath: string): number {
   // may have been moved to a temp path while applied is still false.
   // Skipped entries are NOT excluded here — they may be retried if the
   // blocking condition (e.g. original-occupied) was resolved by the caller.
-  const candidates = [...log.operations]
+  const candidates = [...undoState.operations]
     .reverse()
     .filter(entry => {
       if (entry.status === 'done') return false;
@@ -436,7 +458,8 @@ export function executeUndo(folderPath: string): number {
     }
   }
 
-  if (countPendingUndoEntries(resolvedFolder) === 0) {
+  const pending = undoState.operations.filter(isPendingUndoEntry).length;
+  if (pending === 0) {
     deleteUndoLog(resolvedFolder);
   }
   return count;

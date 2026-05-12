@@ -15,6 +15,7 @@ describe('scanFolder ordering', () => {
       fs.writeFileSync(path.join(dir, 'Episode 10.mkv'), '10');
       fs.writeFileSync(path.join(dir, 'Episode 2.mkv'), '2');
       fs.writeFileSync(path.join(dir, 'Episode 01.mkv'), '1');
+      fs.writeFileSync(path.join(dir, '.hidden.mkv'), 'hidden');
       fs.writeFileSync(path.join(dir, 'ignore.txt'), 'x');
 
       const first = scanFolder(dir).map(f => f.name);

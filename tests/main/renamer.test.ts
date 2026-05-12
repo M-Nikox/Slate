@@ -91,6 +91,29 @@ describe('renamer preflight + undo durability', () => {
       fs.rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  it('blocks cross-directory destination moves', () => {
+    const dir = makeTempDir();
+    try {
+      const nested = path.join(dir, 'subdir');
+      fs.mkdirSync(nested);
+      const source = path.join(dir, 'Episode 01.mkv');
+      const destination = path.join(nested, 'Show - S01E01.mkv');
+      fs.writeFileSync(source, 'episode-1');
+
+      const result = executeRename(dir, [{ from: source, to: destination }]);
+      expect(result.succeeded).toHaveLength(0);
+      expect(result.failed).toBeNull();
+      expect(result.issues?.some(issue =>
+        issue.code === 'invalid-operation' &&
+        issue.message.includes('same directory'),
+      )).toBe(true);
+      expect(fs.existsSync(source)).toBe(true);
+      expect(fs.existsSync(destination)).toBe(false);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------

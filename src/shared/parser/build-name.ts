@@ -30,14 +30,19 @@ export function applyTemplate(
     ? `${padEpisode(result.episode)}-E${padEpisode(result.episodeEnd)}`
     : padEpisode(result.episode);
 
-  const output = template
-    .replace(/\{Show\}/g,           result.showName)
-    .replace(/\{Season\}/g,         String(result.season))
-    .replace(/\{SeasonZ\}/g,        padSeason(result.season))
-    .replace(/\{Episode\}/g,        String(result.episode))
-    .replace(/\{EpisodeZ\}/g,       episodeZValue)
-    .replace(/\{EpisodeTitle\}/g,   episodeTitle?.trim() ?? '')
-    .replace(/\{OriginalName\}/g,   originalBase);
+  const tokenValues: Record<TemplateToken, string> = {
+    '{Show}': result.showName,
+    '{Season}': String(result.season),
+    '{SeasonZ}': padSeason(result.season),
+    '{Episode}': String(result.episode),
+    '{EpisodeZ}': episodeZValue,
+    '{EpisodeTitle}': episodeTitle?.trim() ?? '',
+    '{OriginalName}': originalBase,
+  };
+  const output = template.replace(
+    /\{Show\}|\{Season\}|\{SeasonZ\}|\{Episode\}|\{EpisodeZ\}|\{EpisodeTitle\}|\{OriginalName\}/g,
+    token => tokenValues[token as TemplateToken] ?? token,
+  );
 
   return `${output}${result.extension}`;
 }

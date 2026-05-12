@@ -17,6 +17,14 @@ export interface PreviewRow {
   reasons: string[];
 }
 
+function parserWarningMessage(code: string): string {
+  const messages: Record<string, string> = {
+    'ambiguous-low-confidence-parse': 'Ambiguous low-confidence parse; review before renaming.',
+    'trailing-episode-marker': 'Additional episode marker detected after parsed match; verify multi-episode formatting.',
+  };
+  return messages[code] ?? code;
+}
+
 function validateProposedName(name: string): { safety: 'safe' | 'warning' | 'blocked'; reasons: string[] } {
   const trimmedName = name.trim();
   if (!trimmedName) {
@@ -109,11 +117,8 @@ export function usePreviews(
       const merged = applyEpisodeOverrideIfValid({ ...result, showName: effectiveShowName }, override?.episode);
       const effectiveEpisode = merged.episode;
       const proposed = applyTemplate(merged, activeTemplate, file.name);
-      const reasons = [...(result.warnings ?? [])];
+      const reasons = (result.warnings ?? []).map(parserWarningMessage);
       let safety: 'safe' | 'warning' | 'blocked' = result.ambiguous ? 'warning' : 'safe';
-      if (result.ambiguous) {
-        reasons.push('Ambiguous low-confidence parse; review before renaming.');
-      }
       const nameValidation = validateProposedName(proposed);
       if (nameValidation.safety !== 'safe') {
         if (nameValidation.safety === 'blocked' || safety === 'safe') {
