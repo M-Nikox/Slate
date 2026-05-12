@@ -4,6 +4,28 @@ All notable changes to this project are documented in this file.
 
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses semantic versioning tags for releases.
 
+## [0.6.0] - 2026-05-13
+
+### Added
+- Parser: low-confidence support for anime-special episode markers (`OVA`, `ONA`, `SP`, `Special`) and Japanese episode marker format (`第NN話` / `第NN话`).
+- Parser: warning signal for trailing unmatched episode markers after parsed episode tokens/ranges.
+
+### Changed
+- Parser: compact `NNN` pattern matching now requires clear separators/boundaries to reduce false positives from codec/year metadata.
+- Template rendering: token replacement now uses a single-pass token map, preventing recursive re-expansion from substituted values.
+- Scanner: hidden files are now excluded from media scan results.
+- Undo durability: undo log updates now use indexed in-memory entry updates before atomic writes to reduce repeated read/scan overhead.
+
+### Fixed
+- Rename safety: renderer destination path construction now targets the filename segment safely instead of broad string replacement.
+- Rename safety: main-process preflight now blocks cross-directory destination paths so rename operations remain same-directory.
+- Parser: improved handling/warnings for multi-episode edge cases with extra trailing episode tokens.
+
+### Tests
+- Added parser coverage for anime-special markers, Japanese episode markers, compact-number false-positive guards, and trailing-marker warnings.
+- Added rename preflight coverage for blocked cross-directory destination operations.
+- Updated scanner test coverage to verify hidden files are excluded from scan output.
+
 ## [0.5.0] - 2026-04-14
 
 ### Added
