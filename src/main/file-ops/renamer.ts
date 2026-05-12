@@ -73,8 +73,10 @@ function pathKey(p: string, caseInsensitive: boolean): string {
 }
 
 function isPendingUndoEntry(entry: UndoEntry): boolean {
-  if (entry.applied !== false || entry.currentPath !== undefined) return entry.status !== 'done';
-  return false;
+  // Pending undo entries are those that were applied (normal case) or staged
+  // to a temp currentPath during a cycle/swap. Entries never applied and not
+  // staged are not undo candidates.
+  return entry.status !== 'done' && (entry.applied !== false || entry.currentPath !== undefined);
 }
 
 function makeTempPath(folderPath: string, preferredSeed: string, occupiedKeys: Set<string>, caseInsensitive: boolean): string {
