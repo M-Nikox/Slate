@@ -18,9 +18,11 @@ export interface PreviewRow {
 }
 
 function parserWarningMessage(code: string): string {
-  if (code === 'ambiguous-low-confidence-parse') return 'Ambiguous low-confidence parse; review before renaming.';
-  if (code === 'trailing-episode-marker') return 'Additional episode marker detected after parsed match; verify multi-episode formatting.';
-  return code;
+  const messages: Record<string, string> = {
+    'ambiguous-low-confidence-parse': 'Ambiguous low-confidence parse; review before renaming.',
+    'trailing-episode-marker': 'Additional episode marker detected after parsed match; verify multi-episode formatting.',
+  };
+  return messages[code] ?? code;
 }
 
 function validateProposedName(name: string): { safety: 'safe' | 'warning' | 'blocked'; reasons: string[] } {

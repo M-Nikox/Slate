@@ -34,7 +34,7 @@ const LOW_CONFIDENCE_PATTERNS: EpisodePattern[] = [
   // Matches a hyphen/en dash/em dash before a 2–3 digit episode number, optionally followed by "v2"
   { regex: /[-–—]\s*(\d{2,3})(?:v\d+)?(?:\s*(?:END|FINAL))?(?=\s*(?:\[|\(|$))/i, hasSeasonGroup: false, defaultSeason: 1, confidence: 'low' },
   // NNN compact format: first digit = season, last two = episode (e.g. 307 → S03E07)
-  // Requires non-alphanumeric boundaries to reduce false positives from codec/year tags.
+  // Requires string boundaries or separators (space/dot/underscore/hyphen) to reduce false positives from codec/year tags.
   { regex: /(?:^|[\s._-])([1-9])(\d{2})(?=$|[\s._-])/, hasSeasonGroup: true, confidence: 'low' },
   // Anime specials markers: OVA/ONA/SP/Special 01
   { regex: /\b(?:OVA|ONA|SP|Special)\s*(\d{1,3})\b/i, hasSeasonGroup: false, defaultSeason: 1, confidence: 'low' },
