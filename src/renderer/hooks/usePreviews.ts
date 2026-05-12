@@ -1,33 +1,28 @@
 import { useMemo } from 'react';
 import { parseFilename } from '../../shared/parser/parse-filename.js';
-import { buildName } from '../../shared/parser/build-name.js';
+import { applyTemplate, DEFAULT_TEMPLATE } from '../../shared/parser/build-name.js';
 import { padSeason, padEpisode } from '../../shared/parser/pad.js';
 import type { Confidence, ManualModeConfig, ParseResult, RowOverride, ScannedFile } from '../../shared/types.js';
 
 export interface PreviewRow {
   file: ScannedFile;
-  proposedName: string | null;    // null = could not parse
+  proposedName: string | null;
   parsed: boolean;
-  confidence: Confidence | null;  // null = unparsed
-  overridden: boolean;            // true = user has edited this row
-  parsedResult: ParseResult | null; // raw parser output
-  effectiveShowName: string | null; // actual show name used in proposedName
-  effectiveEpisode: number | null;  // actual episode number used in proposedName
+  confidence: Confidence | null;
+  overridden: boolean;
+  parsedResult: ParseResult | null;
+  effectiveShowName: string | null;
+  effectiveEpisode: number | null;
   safety: 'safe' | 'warning' | 'blocked';
   reasons: string[];
 }
 
 function validateProposedName(name: string): { safety: 'safe' | 'warning' | 'blocked'; reasons: string[] } {
-  // Empty name is a hard block — nothing useful can be inferred.
   const trimmedName = name.trim();
   if (!trimmedName) {
     return { safety: 'blocked', reasons: ['Destination name is empty.'] };
   }
 
-  // For all other structural issues, emit a warning rather than blocked.
-  // The main process runs validateDestinationName (the authoritative policy)
-  // during preflight, so the renderer avoids false positives by not blocking
-  // early on checks it cannot fully replicate (e.g. full-path length on Windows).
   const advisoryReasons: string[] = [];
   const invalidChars = /[<>:"/\\|?*\u0000-\u001F]/;
   const reserved = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i;
@@ -54,21 +49,11 @@ function applyEpisodeOverrideIfValid(result: ParseResult, overrideEpisode: numbe
   if (overrideEpisode === undefined || !Number.isFinite(overrideEpisode) || overrideEpisode <= 0) {
     return result;
   }
-
   if (result.episodeEnd !== undefined && result.episodeEnd > result.episode) {
     const span = result.episodeEnd - result.episode;
-    return {
-      ...result,
-      episode: overrideEpisode,
-      episodeEnd: overrideEpisode + span,
-    };
+    return { ...result, episode: overrideEpisode, episodeEnd: overrideEpisode + span };
   }
-
-  return {
-    ...result,
-    episode: overrideEpisode,
-    episodeEnd: undefined,
-  };
+  return { ...result, episode: overrideEpisode, episodeEnd: undefined };
 }
 
 export function usePreviews(
@@ -77,21 +62,29 @@ export function usePreviews(
   manualMode: boolean,
   manualConfig: ManualModeConfig | null,
   rowOverrides: Map<string, RowOverride>,
+  template: string,
 ): PreviewRow[] {
   return useMemo(() => {
+    const activeTemplate = template.trim() || DEFAULT_TEMPLATE;
+
     if (manualMode) {
       const showName = manualConfig?.showName.trim();
       if (!manualConfig || !showName) {
         return files.map(file => ({
           file, proposedName: null, parsed: false, confidence: null,
           overridden: false, parsedResult: null, effectiveShowName: null, effectiveEpisode: null,
-          safety: 'blocked', reasons: ['Manual mode requires a show name.'],
+          safety: 'blocked' as const, reasons: ['Manual mode requires a show name.'],
         }));
       }
       return files.map((file, index) => {
         const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
         const epNum = manualConfig.startEpisode + index;
-        const proposedName = `${showName} - S${padSeason(manualConfig.season)}E${padEpisode(epNum)}${ext}`;
+        // Construct a minimal ParseResult so the template applies in manual mode too
+        const fakeResult: ParseResult = {
+          showName, season: manualConfig.season, episode: epNum,
+          extension: ext, confidence: 'high',
+        };
+        const proposedName = applyTemplate(fakeResult, activeTemplate, file.name);
         const nameValidation = validateProposedName(proposedName);
         return {
           file, proposedName, parsed: true, confidence: 'high' as const,
@@ -108,18 +101,14 @@ export function usePreviews(
         return {
           file, proposedName: null, parsed: false, confidence: null,
           overridden: false, parsedResult: null, effectiveShowName: null, effectiveEpisode: null,
-          safety: 'blocked', reasons: ['Could not parse filename.'],
+          safety: 'blocked' as const, reasons: ['Could not parse filename.'],
         };
       }
       const override = rowOverrides.get(file.path);
       const effectiveShowName = override?.showName ?? (overrideName.trim() || result.showName);
       const merged = applyEpisodeOverrideIfValid({ ...result, showName: effectiveShowName }, override?.episode);
-      // Derive effectiveEpisode from the validated merged object so the UI
-      // always reflects the episode number that will actually be used in the
-      // rename (applyEpisodeOverrideIfValid silently ignores invalid overrides
-      // such as 0 or NaN).
       const effectiveEpisode = merged.episode;
-      const proposed = buildName(merged);
+      const proposed = applyTemplate(merged, activeTemplate, file.name);
       const reasons = [...(result.warnings ?? [])];
       let safety: 'safe' | 'warning' | 'blocked' = result.ambiguous ? 'warning' : 'safe';
       if (result.ambiguous) {
@@ -127,8 +116,6 @@ export function usePreviews(
       }
       const nameValidation = validateProposedName(proposed);
       if (nameValidation.safety !== 'safe') {
-        // 'blocked' (empty name) overrides any prior safety; 'warning' only
-        // escalates — it won't downgrade an existing 'blocked' from elsewhere.
         if (nameValidation.safety === 'blocked' || safety === 'safe') {
           safety = nameValidation.safety;
         }
@@ -141,5 +128,5 @@ export function usePreviews(
         safety, reasons,
       };
     });
-  }, [files, overrideName, manualMode, manualConfig, rowOverrides]);
+  }, [files, overrideName, manualMode, manualConfig, rowOverrides, template]);
 }
