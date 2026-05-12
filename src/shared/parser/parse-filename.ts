@@ -11,17 +11,18 @@ interface EpisodePattern {
   hasSeasonGroup: boolean;   // false = no season captured, defaultSeason is used
   defaultSeason?: number;
   confidence: Confidence;
+  warnOnTrailingEpisodeMarker?: boolean;
 }
 
 const HIGH_CONFIDENCE_PATTERNS: EpisodePattern[] = [
   // S01E001E002 — double episode, long format
-  { regex: /[Ss](\d{1,2})[Ee](\d{1,3})(?!\d)[Ee](\d{1,3})(?!\d)/, hasSeasonGroup: true, confidence: 'high' },
+  { regex: /[Ss](\d{1,2})[Ee](\d{1,3})(?!\d)[Ee](\d{1,3})(?!\d)/, hasSeasonGroup: true, confidence: 'high', warnOnTrailingEpisodeMarker: true },
   // S01E001 — standard, long format
-  { regex: /[Ss](\d{1,2})[Ee](\d{1,3})(?!\d)/, hasSeasonGroup: true, confidence: 'high' },
+  { regex: /[Ss](\d{1,2})[Ee](\d{1,3})(?!\d)/, hasSeasonGroup: true, confidence: 'high', warnOnTrailingEpisodeMarker: true },
   // 1x001 — alternate, long format
-  { regex: /(\d{1,2})x(\d{1,3})(?!\d)/i, hasSeasonGroup: true, confidence: 'high' },
+  { regex: /(\d{1,2})x(\d{1,3})(?!\d)/i, hasSeasonGroup: true, confidence: 'high', warnOnTrailingEpisodeMarker: true },
   // Season 1 Episode 1 — verbose
-  { regex: /[Ss]eason\s*(\d{1,2})\s*[Ee]pisode\s*(\d{1,3})(?!\d)/i, hasSeasonGroup: true, confidence: 'high' },
+  { regex: /[Ss]eason\s*(\d{1,2})\s*[Ee]pisode\s*(\d{1,3})(?!\d)/i, hasSeasonGroup: true, confidence: 'high', warnOnTrailingEpisodeMarker: true },
   // "Episode 7" / "Ep 7" — no season, defaults to 1
   { regex: /\b[Ee]p(?:isode)?\s*(\d{1,3})\b/i, hasSeasonGroup: false, defaultSeason: 1, confidence: 'high' },
   // "E7" / "E198" — no season, defaults to 1 unless a standalone season token exists
@@ -31,10 +32,14 @@ const HIGH_CONFIDENCE_PATTERNS: EpisodePattern[] = [
 const LOW_CONFIDENCE_PATTERNS: EpisodePattern[] = [
   // Anime style: "Show Name - 07", "Show Name – 07", or "Show Name — 07" — no season, defaults to 1
   // Matches a hyphen/en dash/em dash before a 2–3 digit episode number, optionally followed by "v2"
-  { regex: /[-–—]\s*(\d{2,3})(?:v\d+)?(?=\s*(?:\[|\(|$))/, hasSeasonGroup: false, defaultSeason: 1, confidence: 'low' },
+  { regex: /[-–—]\s*(\d{2,3})(?:v\d+)?(?:\s*(?:END|FINAL))?(?=\s*(?:\[|\(|$))/i, hasSeasonGroup: false, defaultSeason: 1, confidence: 'low' },
   // NNN compact format: first digit = season, last two = episode (e.g. 307 → S03E07)
-  // Allows dot/underscore separators, blocks alphanumeric suffixes (e.g. 1080p)
-  { regex: /(?<!\d)([1-9])(\d{2})(?![\dA-Za-z])/, hasSeasonGroup: true, confidence: 'low' },
+  // Requires non-alphanumeric boundaries to reduce false positives from codec/year tags.
+  { regex: /(?:^|[\s._-])([1-9])(\d{2})(?=$|[\s._-])/, hasSeasonGroup: true, confidence: 'low' },
+  // Anime specials markers: OVA/ONA/SP/Special 01
+  { regex: /\b(?:OVA|ONA|SP|Special)\s*(\d{1,3})\b/i, hasSeasonGroup: false, defaultSeason: 1, confidence: 'low' },
+  // Japanese marker: 第07話 / 第07话
+  { regex: /第\s*(\d{1,3})\s*[話话]/, hasSeasonGroup: false, defaultSeason: 1, confidence: 'low' },
 ];
 
 function getExtension(filename: string): string {
@@ -122,7 +127,27 @@ function parseWithPattern(base: string, ext: string, pattern: EpisodePattern): P
   const showName = cleanShowName(stripped);
   if (!showName) return null;
 
-  return { showName, season, episode, episodeEnd, extension: ext, confidence: pattern.confidence };
+  const remaining = base.slice(match.index + match[0].length);
+  const warnings: string[] = [];
+  if (
+    pattern.warnOnTrailingEpisodeMarker &&
+    (
+      /^\s*(?:[._-]+|\s+)+(?:[Ee](?:p(?:isode)?)?\s*)?\d{1,3}\b/i.test(remaining) ||
+      /^\s*[Ee](?:p(?:isode)?)?\s*\d{1,3}\b/i.test(remaining)
+    )
+  ) {
+    warnings.push('trailing-episode-marker');
+  }
+
+  return {
+    showName,
+    season,
+    episode,
+    episodeEnd,
+    extension: ext,
+    confidence: pattern.confidence,
+    warnings: warnings.length > 0 ? warnings : undefined,
+  };
 }
 
 function parseDistinctKey(result: ParseResult): string {
@@ -155,7 +180,7 @@ export function parseFilename(filename: string): ParseResult | null {
   const selected = lowCandidates[0];
   if (distinct.size > 1) {
     selected.ambiguous = true;
-    selected.warnings = ['ambiguous-low-confidence-parse'];
+    selected.warnings = [...(selected.warnings ?? []), 'ambiguous-low-confidence-parse'];
   }
   return selected;
 }

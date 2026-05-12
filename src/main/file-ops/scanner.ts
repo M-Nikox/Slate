@@ -25,6 +25,7 @@ export function scanFolder(folderPath: string): ScannedFile[] {
 
   for (const entry of entries) {
     if (!entry.isFile()) continue;
+    if (entry.name.startsWith('.')) continue;
 
     const ext = path.extname(entry.name).toLowerCase();
     if (!MEDIA_EXTENSIONS.has(ext)) continue;

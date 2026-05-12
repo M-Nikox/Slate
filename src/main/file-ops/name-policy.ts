@@ -9,6 +9,8 @@ const MAX_PATH_LENGTH_WINDOWS = 260;
 export function validateDestinationName(destinationPath: string): RenameIssue[] {
   const issues: RenameIssue[] = [];
   const baseName = path.basename(destinationPath);
+  const normalizedDestination = destinationPath.replace(/\\/g, '/');
+  const normalizedBase = baseName.replace(/\\/g, '/');
 
   if (!baseName || baseName === '.' || baseName === '..') {
     issues.push({
@@ -17,6 +19,14 @@ export function validateDestinationName(destinationPath: string): RenameIssue[] 
       message: 'Destination filename is empty or invalid.',
     });
     return issues;
+  }
+
+  if (normalizedDestination.includes('/') && !normalizedDestination.endsWith(`/${normalizedBase}`)) {
+    issues.push({
+      severity: 'blocked',
+      code: 'nested-path-not-allowed',
+      message: 'Destination must be a filename only; nested destination paths are not allowed.',
+    });
   }
 
   if (INVALID_FILENAME_CHARS.test(baseName)) {

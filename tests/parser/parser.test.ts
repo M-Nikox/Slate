@@ -198,6 +198,14 @@ describe('parseFilename — unrecognised input', () => {
   it('returns null for a bare filename', () => {
     expect(parseFilename('video.mkv')).toBeNull();
   });
+
+  it('does not parse movie/codec metadata as compact anime numbering', () => {
+    expect(parseFilename('Movie.Title.2024.1080p.BluRay.x265.mkv')).toBeNull();
+  });
+
+  it('does not parse codec-adjacent compact numbering token', () => {
+    expect(parseFilename('Show.Name.Part.1.1080p.WEB-DL.x264.mkv')).toBeNull();
+  });
 });
 
 describe('parseFilename — determinism and structural guards', () => {
@@ -277,6 +285,39 @@ describe('parseFilename — anime bracket format', () => {
     const r = parseFilename('[Group] My Show - 03v2 [720p].mkv');
     expect(r!.episode).toBe(3);
     expect(r!.showName).toBe('My Show');
+  });
+
+  it('parses OVA episode marker', () => {
+    const r = parseFilename('[Group] Anime Title OVA 01 [1080p].mkv');
+    expect(r).not.toBeNull();
+    expect(r!.season).toBe(1);
+    expect(r!.episode).toBe(1);
+    expect(r!.confidence).toBe('low');
+  });
+
+  it('parses ONA episode marker', () => {
+    const r = parseFilename('[Group] Anime Title ONA 02 [1080p].mkv');
+    expect(r).not.toBeNull();
+    expect(r!.episode).toBe(2);
+  });
+
+  it('parses Special episode marker', () => {
+    const r = parseFilename('[Group] Anime Title Special 03 [1080p].mkv');
+    expect(r).not.toBeNull();
+    expect(r!.episode).toBe(3);
+  });
+
+  it('parses Japanese 第07話 marker', () => {
+    const r = parseFilename('ドラゴンボール超 第07話.mkv');
+    expect(r).not.toBeNull();
+    expect(r!.episode).toBe(7);
+    expect(r!.showName).toBe('ドラゴンボール超');
+  });
+
+  it('parses anime END marker', () => {
+    const r = parseFilename('Anime Title - 12 END [1080p].mkv');
+    expect(r).not.toBeNull();
+    expect(r!.episode).toBe(12);
   });
 });
 
@@ -380,6 +421,10 @@ describe('parseFilename — NNN compact format', () => {
   it('does not parse NNN as episode when part of resolution tag', () => {
     expect(parseFilename('Show.S01E1080p.mkv')).toBeNull();
   });
+
+  it('does not parse 4-digit anime absolute number in compact mode', () => {
+    expect(parseFilename('[Erai-raws] One Piece - 1101 [1080p][HEVC].mkv')).toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -444,5 +489,26 @@ describe('applyTemplate', () => {
 
   it('custom plex-style template', () => {
     expect(applyTemplate(base, '{Show} S{SeasonZ}E{EpisodeZ}')).toBe('Breaking Bad S03E07.mkv');
+  });
+
+  it('does not recursively re-expand token-like text inserted by {Show}', () => {
+    const withTokenName = { ...base, showName: 'Show {Season}' };
+    expect(applyTemplate(withTokenName, '{Show}-{SeasonZ}')).toBe('Show {Season}-03.mkv');
+  });
+});
+
+describe('parseFilename — trailing episode marker warnings', () => {
+  it('warns when an unmatched trailing episode marker exists', () => {
+    const r = parseFilename('Some.Show.S02E03-04.mkv');
+    expect(r).not.toBeNull();
+    expect(r!.warnings).toContain('trailing-episode-marker');
+  });
+
+  it('warns when extra episode markers follow a parsed range', () => {
+    const r = parseFilename('Some.Show.S02E03E04E05.mkv');
+    expect(r).not.toBeNull();
+    expect(r!.episode).toBe(3);
+    expect(r!.episodeEnd).toBe(4);
+    expect(r!.warnings).toContain('trailing-episode-marker');
   });
 });
