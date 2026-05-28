@@ -21,9 +21,11 @@ export function applyTemplate(
   originalName?: string,
   episodeTitle?: string,
 ): string {
-  const originalBase = originalName
-    ? originalName.slice(0, originalName.lastIndexOf('.')) || originalName
-    : '';
+  const originalBase = (() => {
+    if (!originalName) return '';
+    const lastDot = originalName.lastIndexOf('.');
+    return lastDot > 0 ? originalName.slice(0, lastDot) : originalName;
+  })();
 
   // {EpisodeZ} expands to a range when episodeEnd is present: "01-E02"
   const episodeZValue = result.episodeEnd !== undefined
