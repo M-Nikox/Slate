@@ -3,9 +3,11 @@ import { bridge } from './bridge.js';
 import { usePreviews } from './hooks/usePreviews.js';
 import PreviewTable from './components/PreviewTable.js';
 import ShowNameEditor from './components/ShowNameEditor.js';
+import TemplateEditor from './components/TemplateEditor.js';
 import UndoBar from './components/UndoBar.js';
 import DropZone from './components/DropZone.js';
 import ManualModePanel from './components/ManualModePanel.js';
+import { DEFAULT_TEMPLATE } from '../shared/parser/build-name.js';
 import type { ManualModeConfig, RowOverride, ScannedFile, RenameOperation } from '../shared/types.js';
 
 type AppStatus =
@@ -27,11 +29,21 @@ export default function App() {
   const [manualMode, setManualMode] = useState(false);
   const [manualConfig, setManualConfig] = useState<ManualModeConfig | null>(null);
   const [rowOverrides, setRowOverrides] = useState<Map<string, RowOverride>>(new Map());
+  const [template, setTemplate] = useState(DEFAULT_TEMPLATE);
+  const [templateMode, setTemplateMode] = useState(false);
 
   const loadRequestIdRef = useRef(0);
 
-  const rows = usePreviews(files, overrideName, manualMode, manualConfig, rowOverrides);
-  const detectedName = rows.find(r => r.parsed)?.proposedName?.split(' - ')[0] ?? '';
+  const buildDestinationPath = (filePath: string, fileName: string, proposedName: string): string => {
+    if (filePath.endsWith(fileName)) {
+      return `${filePath.slice(0, -fileName.length)}${proposedName}`;
+    }
+    return filePath.replace(/[^\\/]*$/, proposedName);
+  };
+
+  const rows = usePreviews(files, overrideName, manualMode, manualConfig, rowOverrides, template);
+  const detectedName = rows.find(r => r.parsed)?.parsedResult?.showName ?? '';
+  const templatePreview = rows.find(r => r.parsed)?.proposedName ?? null;
 
   const isRenaming = status.type === 'renaming';
   const isUndoing = status.type === 'undoing';
@@ -96,7 +108,7 @@ export default function App() {
       .filter(r => r.parsed && r.safety !== 'blocked' && r.proposedName && selected.has(r.file.path))
       .map(r => ({
         from: r.file.path,
-        to: r.file.path.replace(r.file.name, r.proposedName!),
+        to: buildDestinationPath(r.file.path, r.file.name, r.proposedName!),
       }));
 
     if (operations.length === 0) return;
@@ -330,11 +342,28 @@ export default function App() {
             />
             Manual mode
           </label>
+          <label style={{ ...styles.manualModeToggle, marginLeft: '20px' }}>
+            <input
+              type="checkbox"
+              checked={templateMode}
+              onChange={e => {
+                const enabled = e.target.checked;
+                setTemplateMode(enabled);
+                if (!enabled) setTemplate(DEFAULT_TEMPLATE);
+              }}
+              style={{ accentColor: '#4a9e5c', marginRight: '7px' }}
+            />
+            Template mode
+          </label>
         </div>
       )}
 
       {files.length > 0 && !loading && manualMode && (
         <ManualModePanel config={manualConfig} onChange={setManualConfig} />
+      )}
+
+      {files.length > 0 && !loading && templateMode && (
+        <TemplateEditor value={template} onChange={setTemplate} preview={templatePreview} />
       )}
 
       {loading && (

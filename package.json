@@ -1,6 +1,6 @@
 {
   "name": "slate",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "A free, open-source media file renamer for TV shows and anime.",
   "type": "module",
   "main": "out/main/index.js",
@@ -21,22 +21,22 @@
     "node": ">=20.19.0"
   },
   "devDependencies": {
-    "@types/node": "^25.5.2",
+    "@types/node": "^25.7.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/semver": "^7.7.1",
     "@vitejs/plugin-react": "^6.0.1",
-    "electron": "^41.1.1",
-    "electron-builder": "^26.0.12",
-    "electron-vite": "^4.0.0",
-    "typescript": "^6.0.2",
-    "vite": "^8.0.5",
-    "vitest": "^4.1.2"
+    "electron": "^42.0.1",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^5.0.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.12",
+    "vitest": "^4.1.6"
   },
   "dependencies": {
     "electron-updater": "^6.8.3",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "semver": "^7.7.4"
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "semver": "^7.8.0"
   }
 }
