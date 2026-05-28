@@ -42,7 +42,7 @@ export default function App() {
   };
 
   const rows = usePreviews(files, overrideName, manualMode, manualConfig, rowOverrides, template);
-  const detectedName = rows.find(r => r.parsed)?.proposedName?.split(' - ')[0] ?? '';
+  const detectedName = rows.find(r => r.parsed)?.parsedResult?.showName ?? '';
   const templatePreview = rows.find(r => r.parsed)?.proposedName ?? null;
 
   const isRenaming = status.type === 'renaming';
