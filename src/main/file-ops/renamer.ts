@@ -26,7 +26,10 @@ function validateOperation(op: RenameOperation, folderPath: string): string | nu
     return `Destination is outside the target folder: ${resolvedTo}`;
   }
 
-  if (path.dirname(resolvedFrom) !== path.dirname(resolvedTo)) {
+  const caseInsensitive = process.platform === 'win32' || process.platform === 'darwin';
+  const fromDir = caseInsensitive ? path.dirname(resolvedFrom).toLowerCase() : path.dirname(resolvedFrom);
+  const toDir = caseInsensitive ? path.dirname(resolvedTo).toLowerCase() : path.dirname(resolvedTo);
+  if (fromDir !== toDir) {
     return 'Destination must remain in the same directory as source';
   }
 
