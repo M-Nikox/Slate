@@ -57,7 +57,7 @@ It combines robust auto-parsing with manual tools, preview-first workflows, and 
 
 ### Template Mode
 - Enable Template Mode to customize the output filename format
-- Use token placeholders like `{Show}`, `{SeasonZ}`, `{EpisodeZ}`, `{EpisodeTitle}`, `{OriginalName}`
+- Use token placeholders like `{Show}`, `{SeasonZ}`, `{EpisodeZ}`, `{OriginalName}`
 - Default format: `{Show} - S{SeasonZ}E{EpisodeZ}` (used when Template Mode is off or reset)
 - Live preview updates from the first parsed row and applies in Auto + Manual Mode
 
