@@ -28,6 +28,7 @@ It combines robust auto-parsing with manual tools, preview-first workflows, and 
 - Preview all rename output before applying any file operation
 - Edit individual rows inline when parser output needs a quick correction
 - Use Manual Mode for full control over show/season/episode sequencing
+- Customize output format with Template Mode tokens
 - Batch rename safely with undo support
 
 ---
@@ -53,6 +54,12 @@ It combines robust auto-parsing with manual tools, preview-first workflows, and 
   - Starting episode
 - Reorder files with drag-and-drop, then apply sequential assignment
 - Great for incomplete, messy, or non-standard source names
+
+### Template Mode
+- Enable Template Mode to customize the output filename format
+- Use token placeholders like `{Show}`, `{SeasonZ}`, `{EpisodeZ}`, `{EpisodeTitle}`, `{OriginalName}`
+- Default format: `{Show} - S{SeasonZ}E{EpisodeZ}` (used when Template Mode is off or reset)
+- Live preview updates from the first parsed row and applies in Auto + Manual Mode
 
 ### Review & Editing UX
 - Rename preview table before commit
