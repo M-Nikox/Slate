@@ -60,9 +60,9 @@ Template Mode lets you customize how Slate formats renamed files.
 2. Edit the **Format** field or click token chips to insert placeholders.
 3. Use any of the supported tokens:
    - `{Show}` (show name)
-   - `{Season}` / `{SeasonZ}` (season number, padded)
-   - `{Episode}` / `{EpisodeZ}` (episode number, padded; ranges for double episodes)
-   - `{EpisodeTitle}` (if provided)
+   - `{Season}` / `{SeasonZ}` (season number; `{SeasonZ}` is 2-digit padded)
+   - `{Episode}` / `{EpisodeZ}` (episode number; `{EpisodeZ}` is padded and expands to a range for double episodes)
+   - `{EpisodeTitle}` (currently not populated by Slate; reserved for future metadata support)
    - `{OriginalName}` (original filename without extension)
 4. Check the live preview for the first parsed row.
 
