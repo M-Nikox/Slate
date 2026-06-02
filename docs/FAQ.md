@@ -12,6 +12,11 @@ Low confidence means Slate found a plausible parse, but the format is ambiguous 
 
 Use Manual Mode when source filenames are inconsistent or when you want deterministic episode sequencing. You set show name, season, and start episode directly.
 
+## Can I customize the output filename format?
+
+Yes. Enable **Template Mode** to edit the filename format using tokens like `{Show}`, `{SeasonZ}`, `{EpisodeZ}`, and `{OriginalName}`.  
+The default template is `{Show} - S{SeasonZ}E{EpisodeZ}`, and the live preview shows the first parsed row.
+
 ## Can I reorder files before numbering?
 
 Yes. In Manual Mode, you can reorder rows and numbering follows that order.

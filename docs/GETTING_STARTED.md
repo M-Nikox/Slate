@@ -52,6 +52,23 @@ In Manual Mode, episode numbering is sequential by the current row order.
 
 When Manual Mode is enabled, parser output is not used for naming.
 
+## Template Mode (Custom Format)
+
+Template Mode lets you customize how Slate formats renamed files.
+
+1. Enable **Template Mode** in the mode bar.
+2. Edit the **Format** field or click token chips to insert placeholders.
+3. Use any of the supported tokens:
+   - `{Show}` (show name)
+   - `{Season}` / `{SeasonZ}` (season number; `{SeasonZ}` is 2-digit padded)
+   - `{Episode}` / `{EpisodeZ}` (episode number; `{EpisodeZ}` is padded and expands to a range for double episodes)
+   - `{EpisodeTitle}` (currently not populated by Slate; reserved for future metadata support)
+   - `{OriginalName}` (original filename without extension)
+4. Check the live preview for the first parsed row.
+
+Template Mode applies in both Auto Mode and Manual Mode.
+If the format is cleared, Slate falls back to the default template: `{Show} - S{SeasonZ}E{EpisodeZ}`.
+
 ## Inline Row Editing
 
 You can override parser output per row:
