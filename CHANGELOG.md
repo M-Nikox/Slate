@@ -7,17 +7,17 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0
 ## [0.6.1-rc] - 2026-07-06
 
 ### Changed
-- Documentation: added Template Mode coverage (default format, tokens, usage) across README, Getting Started, and FAQ. (#27)
-- Dependency/security maintenance to stabilize Dependabot updates, including a secure esbuild override path. (#28)
+- Documentation: added Template Mode coverage (default format, tokens, usage) across README, Getting Started, and FAQ.
+- Dependency/security maintenance to stabilize Dependabot updates, including a secure esbuild override path.
 - Updated dependencies:
-  - `vite` 8.0.12 → 8.0.16 (#29)
-  - `undici` updates in lockfile (`7.25.0` → `7.28.0` and `6.25.0` → `6.27.0`) (#30)
-  - `form-data` 4.0.5 → 4.0.6 (#31)
-  - `tar` 7.5.15 → 7.5.16 (#32)
-  - `js-yaml` 4.1.1 → 4.2.0 (#33)
+  - `vite` 8.0.12 → 8.0.16
+  - `undici` updates in lockfile (`7.25.0` → `7.28.0` and `6.25.0` → `6.27.0`)
+  - `form-data` 4.0.5 → 4.0.6
+  - `tar` 7.5.15 → 7.5.16
+  - `js-yaml` 4.1.1 → 4.2.0
 
 ### Security
-- Pulled in upstream security fixes through dependency updates (`undici`, `form-data`, `tar`, `js-yaml`) and the Dependabot/esbuild remediation work. (#28, #30, #31, #32, #33)
+- Pulled in upstream security fixes through dependency updates (`undici`, `form-data`, `tar`, `js-yaml`) and the Dependabot/esbuild remediation work.
 
 ## [0.6.0] - 2026-05-13
 
