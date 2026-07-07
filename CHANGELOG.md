@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses semantic versioning tags for releases.
 
-## [0.6.1rc] - 2026-07-06
+## [0.6.1-rc] - 2026-07-06
 
 ### Changed
 - Documentation: added Template Mode coverage (default format, tokens, usage) across README, Getting Started, and FAQ. (#27)
