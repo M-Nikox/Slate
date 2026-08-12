@@ -64,8 +64,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Package app
-        run: npm run make
+      - name: Package app (retry on transient network failures)
+        run: |
+          for attempt in 1 2 3; do
+            if npm run make; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Packaging attempt $attempt failed; retrying after 15s..."
+              sleep 15
+            fi
+          done
+          echo "Packaging failed after 3 attempts."
+          exit 1
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
@@ -144,8 +155,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Package app
-        run: npm run make
+      - name: Package app (retry on transient network failures)
+        run: |
+          for attempt in 1 2 3; do
+            if npm run make; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Packaging attempt $attempt failed; retrying after 15s..."
+              sleep 15
+            fi
+          done
+          echo "Packaging failed after 3 attempts."
+          exit 1
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
