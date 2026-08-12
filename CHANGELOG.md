@@ -4,6 +4,24 @@ All notable changes to this project are documented in this file.
 
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses semantic versioning tags for releases.
 
+## [0.6.1] - 2026-08-12
+
+### Changed
+- Includes all changes shipped in `0.6.1-rc`.
+- Added post-RC dependency updates from PRs #36 through #44:
+  - `tar` `7.5.16` → `7.5.22` (#36)
+  - `electron-builder` / `app-builder-lib` `26.8.1` → `26.15.3` (#37)
+  - `postcss` `8.5.15` → `8.5.25` (with `nanoid` `3.3.12` → `3.3.16`) (#39)
+  - `electron-updater` `6.8.3` → `6.8.9` and `builder-util-runtime` `9.5.1` → `9.7.0` (#40)
+  - Lockfile security refresh with transitive dependency updates (including `js-yaml` `4.2.0` → `4.3.0`) (#41)
+  - `undici` `7.28.0` → `7.29.0` (#42)
+  - `fast-uri` `3.1.4` → `3.1.5` (#43)
+  - `js-yaml` `4.3.0` → `4.3.1` (#44)
+
+### Security
+- Includes all security fixes from `0.6.1-rc`.
+- Adds post-RC advisory-driven updates from merged PRs #36-#44, including `undici` v7.29.0 hardening, `fast-uri` v3.1.5, and `js-yaml` v4.3.1.
+
 ## [0.6.1-rc] - 2026-07-06
 
 ### Changed
