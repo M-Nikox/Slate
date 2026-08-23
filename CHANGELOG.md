@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses semantic versioning tags for releases.
 
+## [0.6.2] - 2026-08-23
+
+### Fixed
+- Align release artifact versioning with tags by bumping app version metadata to `0.6.2`.
+- Restores consistent release packaging outputs for the next tagged release across Linux, macOS, and Windows.
+
 ## [0.6.1] - 2026-08-12
 
 ### Changed
