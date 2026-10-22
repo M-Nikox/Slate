@@ -4,6 +4,21 @@ All notable changes to this project are documented in this file.
 
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses semantic versioning tags for releases.
 
+## [0.6.3] - 2026-10-22
+
+## Security
+- Bump @xmldom/xmldom from 0.8.13 to 0.8.15 by @dependabot[bot] in https://github.com/M-Nikox/Slate/pull/51
+- Bump fast-uri from 3.1.5 to 3.1.7 by @dependabot[bot] in https://github.com/M-Nikox/Slate/pull/50
+- Bump @vitest/mocker and vitest by @dependabot[bot] in https://github.com/M-Nikox/Slate/pull/52
+- Bump js-yaml from 4.3.1 to 4.3.2 by @dependabot[bot] in https://github.com/M-Nikox/Slate/pull/53
+-  Bump undici by @dependabot[bot] in https://github.com/M-Nikox/Slate/pull/55
+- Bump electron from 42.0.1 to 42.10.0 by @dependabot[bot] in https://github.com/M-Nikox/Slate/pull/54
+- Bump brace-expansion from 1.1.16 to 1.1.21 by @dependabot[bot] in https://github.com/M-Nikox/Slate/pull/56
+- Bump source-map-js from 1.2.1 to 1.2.2 by @dependabot[bot] in https://github.com/M-Nikox/Slate/pull/57
+- Bump vite from 8.0.16 to 8.1.6 by @dependabot[bot] in https://github.com/M-Nikox/Slate/pull/58
+- chore: refresh npm dependencies to latest and regenerate lockfile by @M-Nikox with @Copilot in https://github.com/M-Nikox/Slate/pull/59
+
+
 ## [0.6.2] - 2026-08-23
 
 ### Fixed
