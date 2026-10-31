@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import type { RenameIssue, RenameOperation, RenameResult, UndoEntry, UndoLog } from '../../shared/types.js';
 import { writeUndoLog, readUndoLog, deleteUndoLog, checkUndoLog } from '../undo/undo-log.js';
 import { validateDestinationName } from './name-policy.js';

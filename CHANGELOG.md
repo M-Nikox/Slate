@@ -4,6 +4,27 @@ All notable changes to this project are documented in this file.
 
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses semantic versioning tags for releases.
 
+## [0.7.0] - 2026-11-01
+
+### Changed
+- Replaced `electron-updater` with a lightweight, native update checker using Node/Electron's native `fetch()` against the GitHub Releases API.
+- Replaced `semver` with a zero-dependency, native version comparison function (`compareVersions`).
+- Modernized all Node.js standard library imports across main and test files to the canonical `node:*` protocol (`node:fs`, `node:path`, `node:os`, `node:url`).
+- Cleaned up bundler configuration (`electron.vite.config.ts`) Rollup externals.
+- Bumped app version to `0.7.0`.
+
+### Removed
+- Removed `electron-updater` and `semver` from production `dependencies`.
+- Removed `@types/semver` from `devDependencies`.
+- Slate now ships with only two runtime production dependencies (`react` and `react-dom`).
+
+### Security
+- Fixed `minimatch` ReDoS advisory (GHSA-g3hv-75wg-m249) via `overrides` (`^11.0.1`), achieving 0 audit vulnerabilities.
+- Hardened standard library resolution against module shadowing by adopting the explicit `node:` protocol.
+
+### Added
+- Added unit tests for native semver comparison (`tests/main/version-check.test.ts`).
+
 ## [0.6.3] - 2026-10-22
 
 ## Security

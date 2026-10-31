@@ -11,12 +11,14 @@ export default defineConfig({
         external: [
           'electron',
           'electron/main',
+          'node:path',
+          'node:fs',
+          'node:os',
+          'node:url',
           'path',
           'fs',
           'os',
-          'url',
-          'semver',
-          'electron-updater'
+          'url'
         ],
       },
     },

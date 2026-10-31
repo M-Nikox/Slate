@@ -1,6 +1,6 @@
-import fs from 'fs';
-import os from 'os';
-import path from 'path';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { executeRename, executeUndo } from '../../src/main/file-ops/renamer.js';
 import { checkUndoLog, countPendingUndoEntries, undoLogPath, writeUndoLog } from '../../src/main/undo/undo-log.js';

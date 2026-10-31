@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'node:path';
 import type { RenameIssue } from '../../shared/types.js';
 
 const INVALID_FILENAME_CHARS = /[<>:"/\\|?*\u0000-\u001F]/;

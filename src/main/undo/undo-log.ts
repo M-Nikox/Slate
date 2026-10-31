@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import type { UndoEntry, UndoLog } from '../../shared/types.js';
 
 export const UNDO_FILENAME = '.slate-undo.json';
