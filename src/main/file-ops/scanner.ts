@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import type { ScannedFile } from '../../shared/types.js';
 
 const MEDIA_EXTENSIONS = new Set([

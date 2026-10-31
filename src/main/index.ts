@@ -1,8 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import electronUpdater from 'electron-updater';
-const { autoUpdater } = electronUpdater;
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { registerHandlers } from './ipc/handlers.js';
 import { IPC } from '../shared/ipc-channels.js';
 
@@ -58,9 +56,6 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  autoUpdater.autoDownload = false;
-  autoUpdater.autoInstallOnAppQuit = false;
-
   registerHandlers();
 
   ipcMain.removeAllListeners(IPC.SET_TITLE);

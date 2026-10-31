@@ -1,17 +1,36 @@
-import { ipcMain, dialog } from 'electron';
-import path from 'path';
-import fs from 'fs';
+import { ipcMain, dialog, app } from 'electron';
+import path from 'node:path';
+import fs from 'node:fs';
 import { IPC } from '../../shared/ipc-channels.js';
 import { scanFolder } from '../file-ops/scanner.js';
 import { executeRename, executeUndo } from '../file-ops/renamer.js';
 import { checkUndoLog } from '../undo/undo-log.js';
-import electronUpdater from 'electron-updater';
-const { autoUpdater } = electronUpdater;
-import { compare as compareSemver } from 'semver';
 import type { RenameOperation, UpdateCheckResponse } from '../../shared/types.js';
 
-function compareVersions(a: string, b: string): number {
-  return compareSemver(a.trim(), b.trim());
+/**
+ * Compare two semver-like version strings (e.g. "0.6.2" vs "0.7.0" or "v1.2.3").
+ * Returns:
+ *   > 0 if a > b (a is newer)
+ *   < 0 if a < b (b is newer)
+ *   0 if equal
+ */
+export function compareVersions(a: string, b: string): number {
+  const cleanA = a.trim().replace(/^v/i, '');
+  const cleanB = b.trim().replace(/^v/i, '');
+
+  const partsA = cleanA.split('-')[0].split('.').map(n => parseInt(n, 10) || 0);
+  const partsB = cleanB.split('-')[0].split('.').map(n => parseInt(n, 10) || 0);
+
+  const maxLen = Math.max(partsA.length, partsB.length, 3);
+  for (let i = 0; i < maxLen; i++) {
+    const valA = partsA[i] ?? 0;
+    const valB = partsB[i] ?? 0;
+    if (valA !== valB) {
+      return valA - valB;
+    }
+  }
+
+  return 0;
 }
 
 function resolveValidDirectoryPath(folderPath: unknown): string {
@@ -123,24 +142,46 @@ export function registerHandlers(): void {
 
   ipcMain.handle(IPC.CHECK_FOR_UPDATES, async (): Promise<UpdateCheckResponse> => {
     try {
-      const result = await autoUpdater.checkForUpdates();
-      const updateInfo = result?.updateInfo;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 7000);
 
-      if (!updateInfo) {
+      const response = await fetch('https://api.github.com/repos/M-Nikox/Slate/releases/latest', {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': `Slate/${app.getVersion()}`,
+        },
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeout));
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          return {
+            status: 'up-to-date',
+            message: 'You are on the latest version.',
+          };
+        }
+        throw new Error(`GitHub responded with HTTP ${response.status}`);
+      }
+
+      const releaseData = (await response.json()) as { tag_name?: string; name?: string };
+      const remoteTag = releaseData.tag_name || releaseData.name;
+
+      if (!remoteTag || typeof remoteTag !== 'string') {
         return {
           status: 'error',
           message:
-            'Update check completed without version information. Automatic updates may be unavailable or not configured for this build.',
+            'Update check completed without version information. Release data was missing expected tag.',
         };
       }
 
-      if (compareVersions(updateInfo.version, autoUpdater.currentVersion.version) <= 0) {
+      const currentVersion = app.getVersion();
+      if (compareVersions(remoteTag, currentVersion) <= 0) {
         return { status: 'up-to-date', message: 'You are on the latest version.' };
       }
 
       return {
         status: 'update-available',
-        message: `Update available: ${updateInfo.version}`,
+        message: `Update available: ${remoteTag.replace(/^v/i, '')}`,
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
